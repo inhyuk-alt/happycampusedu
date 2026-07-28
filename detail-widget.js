@@ -81,7 +81,7 @@
 
   // "programs" 시트를 웹에 게시(CSV)했을 때 나온 주소. 시트를 재게시해서
   // 주소가 바뀌면 여기 한 곳만 고치면 12개 페이지에 전부 반영됨
-  var SHEET_CSV_URL = '여기에-게시된-CSV-URL-붙여넣기';
+  var SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRphcNuCkSuwGWapzV-nfMQUkylKz3J_qJEnczUfILvM6PBonOBIJiV4RJc5uhhKwcukiUbfphKeCrq/pub?gid=147504769&single=true&output=csv';
 
   // 페이지별 프로그램 ID는 각 코드위젯에서 window.PROGRAM_ID로 미리 선언해둠
   var PROGRAM_ID = window.PROGRAM_ID || '';
