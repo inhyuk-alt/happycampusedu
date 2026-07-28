@@ -1,0 +1,576 @@
+/* ==================================================================
+   detail-widget.css
+   ------------------------------------------------------------------
+   상세페이지 상자(iw-detail-card) 디자인 전체를 담당하는 공용 스타일시트.
+
+   이 파일 하나를 깃허브에 올려두고, 프로그램 12개 상세페이지가
+   전부 이 파일을 <link rel="stylesheet" href="..."> 로 불러다 씁니다.
+   그래서 여기 값을 하나 고치면 12개 페이지에 전부 동시 반영됩니다.
+
+   같이 필요한 다른 파일
+   - detail-widget.js  : 데이터를 불러와서 화면에 실제로 그리는 로직
+   - README.md         : 설치 방법, 각 파일 역할, 전체 데이터 구조 설명
+
+   각 구역은 대괄호 태그로 표시되어 있어서, 이 파일 안에서 Ctrl+F로
+   [사진] [배지] [제목] [지역] [달력] [모집인원] [주요내용] [문의]
+   [소제목] [표] [도식] 같은 단어를 검색하면 관련된 CSS만 모아서 볼 수 있습니다.
+================================================================== */
+
+:where(*, *::before, *::after) {
+  box-sizing: border-box;
+}
+
+/* ------------------------------------------------------------
+   [카드 전체] 배경/글꼴/전체 폭 — 카테고리별 배경색(--detail-bg)과
+   포인트색(--accent)은 여기 고정값이 아니라, detail-widget.js가
+   불러온 데이터의 category 값에 따라 실행 중에 덮어씁니다.
+------------------------------------------------------------ */
+
+.iw-detail-card {
+  --accent: #d97b3f; /* 포인트색 기본값(예비값). 실제로는 JS가 카테고리에 맞는 색으로 교체함 */
+  --detail-bg: #fdf1dc; /* 카드 배경색 기본값(예비값). 실제로는 JS가 카테고리에 맞는 색으로 교체함 */
+
+  width: 100%;
+  max-width: 780px; /* 카드 전체 최대 너비 */
+  margin: 0 auto;
+  padding: 0 0 32px; /* 카드 하단 여백 */
+  border-radius: 18px; /* 카드 모서리 둥글기 */
+  background: var(--detail-bg);
+  font-family: /* 사이트 다른 페이지(일 연계 프로그램 위젯)와 맞춘 폰트 스택 */
+    "Noto Sans KR",
+    Pretendard,
+    "Apple SD Gothic Neo",
+    "Malgun Gothic",
+    sans-serif;
+  overflow: hidden;
+}
+
+/* 데이터를 못 불러왔을 때(에러 상태) 사진 자리 문구만 남기고 나머지는 숨김 */
+.iw-detail-card[data-status="error"] .iw-detail-badge,
+.iw-detail-card[data-status="error"] .iw-detail-title,
+.iw-detail-card[data-status="error"] .iw-detail-divider,
+.iw-detail-card[data-status="error"] .iw-detail-regions,
+.iw-detail-card[data-status="error"] .iw-detail-info {
+  display: none;
+}
+
+/* ------------------------------------------------------------
+   [사진] 상단 사진 영역
+------------------------------------------------------------ */
+
+.iw-detail-card .iw-detail-photo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px; /* [사진] 사진 영역 높이. 사진 비율에 맞춰 조절 */
+  background: #f4e2c2; /* [사진] 사진 등록 전 placeholder 배경색 */
+  color: #b79a72; /* [사진] placeholder 문구 색상 */
+  font-size: 15px; /* [사진] placeholder 문구 크기 */
+  overflow: hidden;
+}
+
+.iw-detail-card .iw-detail-photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* [사진] 잘리지 않고 전체가 보이게 하려면 contain으로 변경 */
+}
+
+/* ------------------------------------------------------------
+   [배지] 카테고리 배지 (사진 아래, 제목 위)
+------------------------------------------------------------ */
+
+.iw-detail-card .iw-detail-badge {
+  display: inline-flex;
+  align-items: center;
+  margin: 28px 32px 14px; /* [배지] 사진과의 간격, 좌우 여백 */
+  padding: 9px 20px; /* [배지] 안쪽 여백(크기감) */
+  border-radius: 999px; /* [배지] 알약 모양 정도 */
+  background: var(--accent); /* [배지] 배경색 = 카테고리 포인트색 그대로 */
+  color: #ffffff; /* [배지] 글자색 */
+  font-size: 14px; /* [배지] 글자 크기 */
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.iw-detail-card .iw-detail-badge:empty {
+  display: none;
+}
+
+/* ------------------------------------------------------------
+   [제목] 프로그램 제목
+------------------------------------------------------------ */
+
+.iw-detail-card .iw-detail-title {
+  margin: 0 32px 22px; /* [제목] 좌우 여백, 아래 간격 */
+  color: #1c2b4a; /* [제목] 글자색 */
+  font-size: 28px; /* [제목] 글자 크기 */
+  font-weight: 900;
+  line-height: 1.35;
+  letter-spacing: -0.03em;
+  word-break: keep-all; /* 한글 제목이 어절 중간에서 줄바꿈되지 않도록 */
+}
+
+.iw-detail-card .iw-detail-divider {
+  margin: 0 32px 24px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08); /* 제목 아래 얇은 구분선 */
+}
+
+/* ------------------------------------------------------------
+   [지역] 지역(장소 및 일정) 블록 — 지역명 · 부제목 · 세부항목(날짜/시간 배지) · 달력
+------------------------------------------------------------ */
+
+.iw-detail-card .iw-detail-regions {
+  padding: 0 32px; /* 지역 블록 전체 좌우 여백 */
+}
+
+.iw-detail-card .iw-detail-region {
+  margin-bottom: 40px; /* 지역 블록 사이 간격 */
+}
+
+.iw-detail-card .iw-detail-region:last-child {
+  margin-bottom: 0;
+}
+
+.iw-detail-card .iw-detail-region-name {
+  margin: 0 0 6px;
+  /* [지역] 지역명 글자색. region.nameColor가 있으면 그 지역만 그 색, 없으면 카테고리 포인트색 */
+  color: var(--region-name-color, var(--accent));
+  font-size: 20px; /* [지역] 지역명 글자 크기 */
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+
+.iw-detail-card .iw-detail-region-subtitle {
+  margin: 0 0 10px;
+  color: #555555; /* [지역] 부제목 글자색 */
+  font-size: 15px; /* [지역] 부제목 글자 크기 */
+  font-weight: 500;
+  word-break: keep-all;
+}
+
+.iw-detail-card .iw-detail-region-detail {
+  display: flex;
+  align-items: center; /* [지역] 배지가 줄 수와 상관없이 항상 내용의 세로 정중앙에 위치 */
+  gap: 10px;
+  margin: 0 0 8px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.iw-detail-card .iw-detail-region-detail-label {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  border-radius: 999px; /* [지역] 세부항목 라벨(날짜/시간 등) 알약형 배지 모양 */
+  background: var(--accent); /* [지역] 라벨 배경색 = 카테고리 포인트색 */
+  color: #000000; /* [지역] 라벨 글자색 고정(검정) — 파스텔 배경 위에서 흰 글자보다 대비가 훨씬 좋음 */
+  font-weight: 800;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.iw-detail-card .iw-detail-region-detail-content {
+  flex: 1 1 0; /* 남은 폭을 전부 차지 — 이 폭 기준으로 줄바꿈 계산됨 */
+  min-width: 0; /* flex 아이템 기본값(auto)이 줄바꿈을 막는 문제 방지 */
+  color: #333333; /* [지역] 세부항목 내용 글자색 */
+  font-weight: 500;
+  word-break: keep-all;
+}
+
+.iw-detail-card .iw-detail-region-detail-chunk {
+  white-space: nowrap; /* "7월 29일(수)"처럼 "|" 로 나뉜 항목 하나는 절대 중간에서 안 쪼개짐 */
+}
+
+.iw-detail-card .iw-detail-region-rule {
+  display: flex;
+  gap: 24px; /* 달력 사이 간격과 맞춰야 선이 자연스럽게 끊어짐 */
+  margin: 14px 0 16px;
+}
+
+.iw-detail-card .iw-detail-region-rule span {
+  flex: 1 1 0;
+  height: 2px; /* [지역] 세부항목-달력 사이 구분선 두께 */
+  background: var(--accent); /* [지역] 구분선 색 = 카테고리 포인트색 */
+}
+
+/* ------------------------------------------------------------
+   [달력] 달력 라벨(연/월), 요일 헤더, 날짜 칸, 하이라이트 원
+------------------------------------------------------------ */
+
+.iw-detail-card .iw-detail-months {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px; /* [달력] 달력끼리(예: 6월/7월) 사이 간격 */
+}
+
+.iw-detail-card .iw-detail-calendar {
+  flex: 1 1 240px; /* [달력] 달력 한 개의 기본 너비 */
+  min-width: 220px; /* [달력] 이보다 좁아지면 다음 줄로 넘어감 */
+}
+
+.iw-detail-card .iw-detail-calendar-label {
+  margin-bottom: 8px;
+  color: #999999; /* [달력] "2026." 연도 글자색 */
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.iw-detail-card .iw-detail-calendar-label .iw-detail-calendar-month {
+  margin-left: 4px;
+  color: #1c2b4a; /* [달력] "06" 월 숫자 글자색 */
+  font-size: 22px; /* [달력] 월 숫자 크기 */
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.iw-detail-card .iw-detail-calendar-grid {
+  width: 100%;
+  table-layout: fixed; /* [달력] 요일 7칸 너비를 항상 균등 고정 (없으면 하이라이트 원이 있는 칸만 넓어져 간격이 틀어짐) */
+  border-collapse: collapse;
+}
+
+.iw-detail-card .iw-detail-calendar-grid th {
+  padding: 9px 0;
+  background: var(--accent); /* [달력] 요일 헤더(일 월 화...) 배경색 */
+  color: #ffffff; /* [달력] 요일 헤더 글자색 */
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  text-align: center; /* 사이트 테마가 th 정렬을 가로채는 경우에 대비한 명시적 고정 */
+}
+
+.iw-detail-card .iw-detail-calendar-grid td {
+  padding: 8px 0;
+  color: #222222; /* [달력] 평일 날짜 숫자 기본 글자색 */
+  font-size: 14px;
+  text-align: center;
+}
+
+.iw-detail-card .iw-detail-calendar-grid td.iw-detail-sunday {
+  color: #c9793c; /* [달력] 일요일 칸 글자색. 흐리면 더 진한 색으로(예: #a85a1f) */
+}
+
+.iw-detail-card .iw-detail-calendar-grid .iw-detail-day-circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px; /* [달력] 하이라이트 원 크기 */
+  height: 26px;
+  border-radius: 50%;
+  background: var(--accent); /* [달력] 하이라이트 기본 배경색. 날짜별 개별 색 지정 시 JS가 이 값 대신 그 색을 씀 */
+  color: #ffffff; /* [달력] 하이라이트 숫자 글자색 */
+  font-weight: 900;
+}
+
+/* ------------------------------------------------------------
+   하단 정보 블록 공통 틀 — [모집인원] [주요내용] [문의] [추가정보]
+   전부 "굵은 구분선 + 라벨(위) + 내용(아래)" 같은 틀을 공유함
+------------------------------------------------------------ */
+
+.iw-detail-card .iw-detail-info {
+  padding: 8px 32px 0;
+}
+
+.iw-detail-card .iw-detail-info-rule {
+  height: 4px; /* 블록 사이 굵은 구분선 두께 */
+  margin-bottom: 28px;
+  background: var(--accent); /* 구분선 색 = 카테고리 포인트색 */
+}
+
+.iw-detail-card .iw-detail-info-row {
+  margin-bottom: 36px; /* 블록 사이 간격 */
+}
+
+.iw-detail-card .iw-detail-info-label {
+  margin-bottom: 10px; /* 라벨과 그 아래 내용 사이 간격 */
+  color: var(--accent); /* 라벨 글자색 = 카테고리 포인트색 */
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  word-break: keep-all; /* 라벨이 길어도(예: "이런 분들에게 추천합니다!") 안전하게 줄바꿈 */
+}
+
+/* [모집인원] [추가정보 안 recruit류 텍스트] 값 한 줄 */
+.iw-detail-card .iw-detail-info-value {
+  color: #222222;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  word-break: keep-all;
+}
+
+/* [주요내용] 불릿 목록 */
+.iw-detail-card .iw-detail-info-list {
+  margin: 0;
+  padding-left: 20px;
+  color: #222222;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  word-break: keep-all;
+}
+
+.iw-detail-card .iw-detail-info-list li {
+  margin-bottom: 8px;
+}
+
+.iw-detail-card .iw-detail-info-list li:last-child {
+  margin-bottom: 0;
+}
+
+/* [문의] 문의처 목록 */
+.iw-detail-card .iw-detail-info-contacts {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.iw-detail-card .iw-detail-info-contact {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.iw-detail-card .iw-detail-info-contact-name {
+  font-size: 17px; /* [문의] 문의처 이름 글자 크기. 색상은 JS가 contact.color로 개별 지정 */
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  word-break: keep-all;
+}
+
+.iw-detail-card .iw-detail-info-contact-phone {
+  color: #222222; /* [문의] 전화번호 글자색 */
+  font-size: 17px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------
+   [사진] 추가정보 블록 안 사진 요소 — layout 값에 따라 세로/그리드/가로스크롤로 배치
+------------------------------------------------------------ */
+
+.iw-detail-card .iw-detail-info-photos {
+  display: flex;
+  flex-direction: column; /* 기본값: 세로로 나열 */
+  gap: 14px;
+  width: 100%;
+}
+
+.iw-detail-card .iw-detail-info-photos[data-layout="grid3"] {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 가로 3열 그리드 */
+  gap: 10px;
+}
+
+.iw-detail-card .iw-detail-info-photos[data-layout="scroll"] {
+  display: flex;
+  flex-direction: row; /* 가로 스크롤 */
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.iw-detail-card .iw-detail-info-photo-item {
+  margin: 0;
+}
+
+.iw-detail-card .iw-detail-info-photos[data-layout="grid3"] .iw-detail-info-photo-item,
+.iw-detail-card .iw-detail-info-photos[data-layout="scroll"] .iw-detail-info-photo-item {
+  flex: 0 0 auto;
+}
+
+.iw-detail-card .iw-detail-info-photos[data-layout="scroll"] .iw-detail-info-photo-item {
+  width: 200px; /* 가로 스크롤일 때 사진 한 장의 고정 너비 */
+}
+
+.iw-detail-card .iw-detail-info-photo-item img {
+  display: block;
+  width: 100%;
+  border-radius: 10px; /* 사진 모서리 둥글기 */
+  object-fit: cover;
+}
+
+.iw-detail-card .iw-detail-info-photos[data-layout="grid3"] .iw-detail-info-photo-item img,
+.iw-detail-card .iw-detail-info-photos[data-layout="scroll"] .iw-detail-info-photo-item img {
+  aspect-ratio: 4 / 3; /* 그리드/스크롤일 때만 비율 고정 (세로 나열은 원본 비율 그대로) */
+}
+
+.iw-detail-card .iw-detail-info-photo-item figcaption {
+  margin-top: 6px;
+  color: #666666; /* 사진 설명 글자색 */
+  font-size: 13px;
+  word-break: keep-all;
+}
+
+/* ------------------------------------------------------------
+   [서식] 추가정보 블록 안 서식 텍스트 요소 — 관리 화면 굵게/기울임/취소선/크기/색이 그대로 반영됨
+------------------------------------------------------------ */
+
+.iw-detail-card .iw-detail-info-richtext {
+  color: #222222;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.7;
+  word-break: keep-all;
+}
+
+.iw-detail-card .iw-detail-info-richtext b,
+.iw-detail-card .iw-detail-info-richtext strong {
+  font-weight: 800;
+}
+
+/* 소제목/텍스트/사진/표/도식을 하나의 세로 묶음으로 감싸는 그릇 (구분선 없이 순서대로 쌓임) */
+.iw-detail-card .iw-detail-info-custom-elements {
+  width: 100%;
+}
+
+/* ------------------------------------------------------------
+   [소제목] 추가정보 블록 안 소제목 요소
+------------------------------------------------------------ */
+
+.iw-detail-card .iw-detail-info-subheading {
+  margin: 0;
+  color: var(--accent); /* [소제목] 글자색 = 카테고리 포인트색 */
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+/* ------------------------------------------------------------
+   [표] 추가정보 블록 안 표 요소
+   헤더 배경은 카테고리색, 글자는 검정(WCAG 대비 계산 결과 검정이 5개 카테고리 전부 안전).
+   테두리는 무채색(검정 계열) 고정 — 밝은 카드 배경 위에서 잘 보이도록.
+------------------------------------------------------------ */
+
+.iw-detail-card .iw-detail-info-table-scroll {
+  width: 100%;
+  overflow-x: auto; /* 열이 많아 표가 넓어지면 좌우 스크롤 */
+}
+
+.iw-detail-card .iw-detail-info-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px; /* [표] 기본 글자 크기 */
+}
+
+.iw-detail-card .iw-detail-info-table th {
+  padding: 10px 12px;
+  background: var(--accent); /* [표] 헤더 배경색 = 카테고리 포인트색 */
+  color: #000000; /* [표] 헤더 글자색 — 검정 고정 (대비 확인 결과 흰 글자는 4개 카테고리에서 기준 미달) */
+  font-weight: 800;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.iw-detail-card .iw-detail-info-table td {
+  padding: 9px 12px;
+  color: #333333; /* [표] 본문 칸 글자색 */
+  word-break: keep-all;
+}
+
+.iw-detail-card .iw-detail-info-table[data-border="thin"] th,
+.iw-detail-card .iw-detail-info-table[data-border="thin"] td {
+  border: 1.5px solid #2b2b2b; /* [표] 얇은 선 옵션 — 검정 계열 고정 */
+}
+
+.iw-detail-card .iw-detail-info-table[data-border="thick"] th,
+.iw-detail-card .iw-detail-info-table[data-border="thick"] td {
+  border: 3px solid #000000; /* [표] 두꺼운 선 옵션 — 완전 검정 */
+}
+
+/* ------------------------------------------------------------
+   [도식] 추가정보 블록 안 좌→우 단계 흐름 요소
+   카드 자체가 이미 카테고리 파스텔색 배경이라, 단계 박스는 흰 배경 +
+   카테고리 포인트색 테두리/화살표로 튀어 보이게 함
+------------------------------------------------------------ */
+
+.iw-detail-card .iw-detail-info-diagram {
+  display: flex;
+  align-items: stretch; /* [도식] 한 행에 나란히 있으므로, 가장 내용 많은 단계 높이에 자동으로 맞춰짐 */
+  gap: 6px;
+  width: 100%;
+}
+
+.iw-detail-card .iw-detail-info-diagram-step {
+  flex: 1 1 0; /* [도식] 폭을 단계 개수만큼 균등 분할 */
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 12px;
+  border-radius: 18px; /* [도식] 단계 박스 모서리 둥글기 */
+  border: 2px solid var(--accent); /* [도식] 테두리 = 카테고리 포인트색 */
+  background: #ffffff; /* [도식] 배경 — 카드 파스텔 배경과 대비되도록 흰색 고정 */
+  text-align: center;
+}
+
+.iw-detail-card .iw-detail-info-diagram-step-content {
+  width: 100%;
+  color: #222222; /* [도식] 단계 안 텍스트 기본색 (서식 편집기에서 개별 색 지정 시 그 색이 우선) */
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  word-break: keep-all;
+}
+
+.iw-detail-card .iw-detail-info-diagram-arrow {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent); /* [도식] 화살표 색 = 카테고리 포인트색 */
+}
+
+/* ------------------------------------------------------------
+   모바일(640px 이하) 대응
+------------------------------------------------------------ */
+
+@media (max-width: 640px) {
+  .iw-detail-card .iw-detail-info-diagram {
+    flex-direction: column; /* [도식] 모바일에서는 세로로 쌓임 */
+  }
+
+  .iw-detail-card .iw-detail-info-diagram-arrow {
+    transform: rotate(90deg); /* [도식] 화살표도 아래 방향으로 회전 */
+    padding: 2px 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .iw-detail-card .iw-detail-badge,
+  .iw-detail-card .iw-detail-title,
+  .iw-detail-card .iw-detail-divider,
+  .iw-detail-card .iw-detail-regions,
+  .iw-detail-card .iw-detail-info {
+    margin-left: 20px;
+    margin-right: 20px;
+  }
+
+  .iw-detail-card .iw-detail-regions,
+  .iw-detail-card .iw-detail-info {
+    padding: 0 20px;
+  }
+
+  .iw-detail-card .iw-detail-title {
+    font-size: 22px;
+  }
+
+  .iw-detail-card .iw-detail-photo {
+    min-height: 220px;
+  }
+
+  .iw-detail-card .iw-detail-info-photos[data-layout="grid3"] {
+    grid-template-columns: repeat(2, 1fr); /* [사진] 모바일에서는 3열 대신 2열 */
+  }
+
+  .iw-detail-card .iw-detail-info-contact {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+}
