@@ -84,7 +84,7 @@
   var SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRphcNuCkSuwGWapzV-nfMQUkylKz3J_qJEnczUfILvM6PBonOBIJiV4RJc5uhhKwcukiUbfphKeCrq/pub?gid=147504769&single=true&output=csv';
 
   // 페이지별 프로그램 ID는 각 코드위젯에서 window.PROGRAM_ID로 미리 선언해둠
-  var PROGRAM_ID = window.PROGRAM_ID || '';
+  var PROGRAM_ID = window.PROGRAM_ID || 'p3266bc238f';
 
   // 카테고리별 배경색/구분선(포인트)색.
   // ⚠️ 관리 웹앱의 Code.gs 안 CATEGORY_STYLE_MAP과 항상 같은 값으로 맞춰야 함
