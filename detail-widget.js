@@ -31,6 +31,8 @@
    이 중 dataJson 칸 안에 아래 구조의 JSON이 통째로 들어있습니다:
 
      {
+       "subtitleLabel": "라벨명 (선택, 예: 한 줄 소개)",
+       "subtitleText": "제목 아래 표시될 짧은 문구 (선택)",
        "regions": [
          {
            "name": "지역/장소명",
@@ -72,6 +74,21 @@
 
    info.blocks 배열의 순서 = 화면에 보이는 순서. custom 블록의 elements
    배열도 마찬가지로 그 순서 그대로 화면에 쌓입니다.
+
+   ------------------------------------------------------------------
+   [한 줄 소개] (2026-07 추가)
+   ------------------------------------------------------------------
+   제목 바로 아래 표시되는 짧은 소개 문구. subtitleLabel(라벨명)과
+   subtitleText(내용) 둘 다 dataJson 최상단에 있음 — regions/info와
+   같은 위치.
+
+   이 요소(.iw-detail-subtitle)는 아임웹에 이미 붙여넣어진 12개 페이지의
+   고정 HTML 스니펫에는 없습니다. 그래서 페이지 스니펫을 전혀 건드리지
+   않고도 적용되도록, 이 파일이 실행될 때 필요하면 그 요소를 직접
+   만들어서 제목(.iw-detail-title)과 구분선(.iw-detail-divider) 사이에
+   끼워 넣습니다. subtitleLabel/subtitleText가 둘 다 비어 있으면 그
+   요소 자체를 안 만들거나 숨겨서, 소개 문구가 없는 프로그램은 기존과
+   완전히 동일하게 보입니다.
 ================================================================== */
 
 (function () {
@@ -411,6 +428,65 @@
     }
 
     return section;
+  }
+
+  // ------------------------------------------------------------
+  // [한 줄 소개] 제목 아래, 구분선 위에 들어가는 짧은 소개 문구
+  // ------------------------------------------------------------
+
+  // 페이지 스니펫에 이미 있는 요소가 아니므로, 없으면 직접 만들어서
+  // .iw-detail-title 과 .iw-detail-divider 사이에 끼워 넣음
+  function getOrCreateSubtitleElement(root) {
+    var existing = root.querySelector('.iw-detail-subtitle');
+
+    if (existing) {
+      return existing;
+    }
+
+    var titleEl = root.querySelector('.iw-detail-title');
+    var dividerEl = root.querySelector('.iw-detail-divider');
+
+    if (!titleEl || !dividerEl) {
+      return null;
+    }
+
+    var subtitleEl = document.createElement('p');
+    subtitleEl.className = 'iw-detail-subtitle';
+    titleEl.parentNode.insertBefore(subtitleEl, dividerEl);
+
+    return subtitleEl;
+  }
+
+  // subtitleLabel/subtitleText를 받아 라벨(있으면 굵게, 포인트색) + 본문 텍스트로 채움.
+  // 둘 다 비어 있으면 요소 자체를 숨김 (기존 페이지 레이아웃과 동일하게 유지됨)
+  function renderSubtitle(root, subtitleLabel, subtitleText) {
+    var hasContent = !!(subtitleText && subtitleText.trim());
+
+    if (!hasContent) {
+      var existing = root.querySelector('.iw-detail-subtitle');
+      if (existing) {
+        existing.style.display = 'none';
+      }
+      return;
+    }
+
+    var subtitleEl = getOrCreateSubtitleElement(root);
+
+    if (!subtitleEl) {
+      return;
+    }
+
+    subtitleEl.innerHTML = '';
+    subtitleEl.style.display = '';
+
+    if (subtitleLabel && subtitleLabel.trim()) {
+      var labelSpan = document.createElement('span');
+      labelSpan.className = 'iw-detail-subtitle-label';
+      labelSpan.textContent = subtitleLabel.trim();
+      subtitleEl.appendChild(labelSpan);
+    }
+
+    subtitleEl.appendChild(document.createTextNode(subtitleText.trim()));
   }
 
   // ------------------------------------------------------------
@@ -818,6 +894,9 @@
     var title = root.querySelector('.iw-detail-title');
     title.textContent = program.title || '';
 
+    // [한 줄 소개] dataJson 최상단에 저장된 subtitleLabel/subtitleText를 반영
+    renderSubtitle(root, data && data.subtitleLabel, data && data.subtitleText);
+
     var regionsWrap = root.querySelector('.iw-detail-regions');
     regionsWrap.innerHTML = '';
 
@@ -870,14 +949,14 @@
           return;
         }
 
-        var data = { regions: [], info: {} };
+        var data = { regions: [], info: {}, subtitleLabel: '', subtitleText: '' };
 
         try {
           if (program.datajson) {
             data = JSON.parse(program.datajson);
           }
         } catch (err) {
-          data = { regions: [], info: {} };
+          data = { regions: [], info: {}, subtitleLabel: '', subtitleText: '' };
         }
 
         renderProgram(root, program, data);
