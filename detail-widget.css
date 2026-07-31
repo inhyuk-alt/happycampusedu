@@ -161,7 +161,7 @@
 }
 
 .iw-detail-card .iw-detail-region-name {
-  margin: 0 0 14px;
+  margin: 0 0 6px;
   /* [지역] 지역명 글자색. region.nameColor가 있으면 그 지역만 그 색, 없으면 카테고리 포인트색 */
   color: var(--region-name-color, var(--accent));
   font-size: 20px; /* [지역] 지역명 글자 크기 */
@@ -284,7 +284,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px; /* [달력] 하이라이트 원 크기 */
+  width: 26px; /* [달력] 하이라이트 원 크기 */
   height: 26px;
   border-radius: 50%;
   background: var(--accent); /* [달력] 하이라이트 기본 배경색. 날짜별 개별 색 지정 시 JS가 이 값 대신 그 색을 씀 */
