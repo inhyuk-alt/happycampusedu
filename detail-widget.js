@@ -760,6 +760,25 @@
       return buildPhotosElement(block.items, block.layout);
     }
 
+    if (block.type === 'calendar') {
+      // [캘린더 블록] 장소·일정 블록 안의 달력과 완전히 동일한 요소(createCalendarElement)를
+      // 재사용. 위치는 이 블록이 info.blocks 안에서 어디에 놓였는지에 따라 자유롭게 정해짐.
+      var months = block.months || [];
+
+      if (months.length === 0) {
+        return null;
+      }
+
+      var monthsWrap = document.createElement('div');
+      monthsWrap.className = 'iw-detail-months';
+
+      for (var mi = 0; mi < months.length; mi += 1) {
+        monthsWrap.appendChild(createCalendarElement(months[mi]));
+      }
+
+      return monthsWrap;
+    }
+
     if (block.type === 'custom') {
       // 추가 정보 블록: 소제목/텍스트/사진/표/도식이 저장된 순서 그대로 이어서 나옴
       var wrap = document.createElement('div');
@@ -924,6 +943,20 @@
     var root = document.querySelector('.iw-detail-card');
 
     if (!root) {
+      return;
+    }
+
+    // [미리보기] 관리 화면에서 내려받은 미리보기 파일은 구글 시트를 거치지 않고
+    // window.__PREVIEW_DATA__ 에 담긴 내용을 그대로 그림 (네트워크 요청 없음).
+    // 실제 12개 페이지에는 이 값이 없으므로 평소 동작에는 전혀 영향 없음.
+    if (window.__PREVIEW_DATA__) {
+      var previewPayload = window.__PREVIEW_DATA__;
+      var previewProgram = {
+        title: previewPayload.title || '',
+        category: previewPayload.category || '',
+        imageurl: previewPayload.imageUrl || ''
+      };
+      renderProgram(root, previewProgram, previewPayload);
       return;
     }
 
