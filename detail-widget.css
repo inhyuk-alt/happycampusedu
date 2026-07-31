@@ -161,7 +161,7 @@
 }
 
 .iw-detail-card .iw-detail-region-name {
-  margin: 0 0 6px;
+  margin: 0 0 14px;
   /* [지역] 지역명 글자색. region.nameColor가 있으면 그 지역만 그 색, 없으면 카테고리 포인트색 */
   color: var(--region-name-color, var(--accent));
   font-size: 20px; /* [지역] 지역명 글자 크기 */
