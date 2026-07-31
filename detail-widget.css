@@ -200,10 +200,12 @@
   flex: 1 1 100%;
 }
 
-/* [배치] 절반 폭 — 220px를 최소 기준(flex-basis)으로 잡아서, 그 두 배 이상 공간이
-   있으면 두 개가 나란히 배치되고, 화면이 좁아지면 자동으로 줄바꿈되어 쌓임 */
+/* [배치] 절반 폭 — 컨테이너의 정확히 절반(가로 gap 20px의 절반만큼 뺀 값)으로 고정해서
+   최대 2단까지만 나란히 붙게 함. 폭이 좁아지면(계산 결과가 최소폭 밑으로 내려가면)
+   flex-wrap에 의해 자동으로 다음 줄로 내려가서 쌓임 */
 .iw-detail-card .iw-detail-region-detail[data-width="half"] {
-  flex: 1 1 220px;
+  flex: 1 1 calc(50% - 10px);
+  min-width: 160px;
 }
 
 .iw-detail-card .iw-detail-region-detail-label {
