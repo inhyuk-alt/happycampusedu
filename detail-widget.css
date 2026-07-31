@@ -161,7 +161,7 @@
 }
 
 .iw-detail-card .iw-detail-region-name {
-  margin: 0 0 14px;
+  margin: 0 0 6px;
   /* [지역] 지역명 글자색. region.nameColor가 있으면 그 지역만 그 색, 없으면 카테고리 포인트색 */
   color: var(--region-name-color, var(--accent));
   font-size: 20px; /* [지역] 지역명 글자 크기 */
@@ -177,19 +177,40 @@
   word-break: keep-all;
 }
 
+/* [배치] 세부항목(날짜/시간/모집인원 등)을 감싸는 그릇 — 절반 폭 항목은 공간이
+   충분하면 나란히, 좁아지면 flex-wrap에 의해 자동으로 다음 줄로 내려가서 쌓임
+   (별도 화면 크기 분기 없이 컨테이너 폭 기준으로 자연스럽게 반응형 처리됨) */
+.iw-detail-card .iw-detail-region-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 20px; /* 세로 간격, 가로 간격 */
+  margin: 0 0 8px;
+}
+
 .iw-detail-card .iw-detail-region-detail {
   display: flex;
   align-items: center; /* [지역] 배지가 줄 수와 상관없이 항상 내용의 세로 정중앙에 위치 */
   gap: 10px;
-  margin: 0 0 8px;
   font-size: 15px;
   line-height: 1.5;
 }
 
+/* [배치] 전체 폭 — 혼자 한 줄 차지 */
+.iw-detail-card .iw-detail-region-detail[data-width="full"] {
+  flex: 1 1 100%;
+}
+
+/* [배치] 절반 폭 — 220px를 최소 기준(flex-basis)으로 잡아서, 그 두 배 이상 공간이
+   있으면 두 개가 나란히 배치되고, 화면이 좁아지면 자동으로 줄바꿈되어 쌓임 */
+.iw-detail-card .iw-detail-region-detail[data-width="half"] {
+  flex: 1 1 220px;
+}
+
 .iw-detail-card .iw-detail-region-detail-label {
   flex: 0 0 auto;
-  display: inline-flex;
+  display: flex; /* 안의 글자(span)들을 균등 배분하기 위해 flex로 전환 */
   align-items: center;
+  justify-content: space-between; /* [라벨] 글자 수가 적어도 라벨 폭 전체에 균등하게 퍼짐 */
   padding: 5px 12px;
   border-radius: 999px; /* [지역] 세부항목 라벨(날짜/시간 등) 알약형 배지 모양 */
   background: var(--accent); /* [지역] 라벨 배경색 = 카테고리 포인트색 */
