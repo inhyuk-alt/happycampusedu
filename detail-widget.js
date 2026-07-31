@@ -339,13 +339,34 @@
   // [지역] 지역(장소 및 일정) 블록 렌더링
   // ------------------------------------------------------------
 
+  // 라벨 텍스트를 한 글자씩 개별 span으로 쪼갬 — 라벨 폭이 넓게 통일된 뒤,
+  // CSS의 justify-content: space-between과 만나 짧은 글자도 폭 전체에 균등하게 퍼짐
+  // (예: "날짜" → "날" ... "짜" 처럼 벌어지고, "모집인원"처럼 이미 꽉 찬 라벨은 그대로 보임)
+  function appendJustifiedCharacters(container, text) {
+    var chars = String(text || '').split('');
+
+    for (var i = 0; i < chars.length; i += 1) {
+      var charSpan = document.createElement('span');
+      charSpan.textContent = chars[i];
+      container.appendChild(charSpan);
+    }
+  }
+
   function createDetailRow(row) {
     var line = document.createElement('div');
     line.className = 'iw-detail-region-detail';
+    // [배치] 전체/절반 폭. 값이 없는 예전 데이터는 항상 전체 폭으로 처리됨
+    line.setAttribute('data-width', row.width === 'half' ? 'half' : 'full');
 
     var label = document.createElement('span');
     label.className = 'iw-detail-region-detail-label';
-    label.textContent = row.label || '';
+    var labelText = row.label || '';
+    appendJustifiedCharacters(label, labelText);
+
+    // 글자가 1개뿐이면 space-between이 왼쪽으로 쏠려 보이므로, 이 경우만 가운데 정렬로 보정
+    if (labelText.length <= 1) {
+      label.style.justifyContent = 'center';
+    }
 
     var content = document.createElement('span');
     content.className = 'iw-detail-region-detail-content';
@@ -378,6 +399,31 @@
     return line;
   }
 
+  // 지역(장소) 하나 안에서, 세부항목 라벨(날짜/시간/모집인원 등)들의 폭을 전부 통일함.
+  // 이미 실제 문서에 삽입되어 레이아웃이 계산된 뒤에 호출해야 정확한 폭을 잴 수 있음.
+  function equalizeRegionLabels(regionEl) {
+    var labels = regionEl.querySelectorAll('.iw-detail-region-detail-label');
+
+    if (labels.length === 0) {
+      return;
+    }
+
+    var maxWidth = 0;
+
+    for (var i = 0; i < labels.length; i += 1) {
+      labels[i].style.width = ''; // 혹시 이전에 강제 폭이 남아있으면 리셋 후 다시 측정
+      var w = labels[i].getBoundingClientRect().width;
+
+      if (w > maxWidth) {
+        maxWidth = w;
+      }
+    }
+
+    for (var j = 0; j < labels.length; j += 1) {
+      labels[j].style.width = maxWidth + 'px';
+    }
+  }
+
   function createRegionElement(region) {
     var section = document.createElement('div');
     section.className = 'iw-detail-region';
@@ -401,8 +447,15 @@
 
     var detailRows = region.detailRows || [];
 
-    for (var d = 0; d < detailRows.length; d += 1) {
-      section.appendChild(createDetailRow(detailRows[d]));
+    if (detailRows.length > 0) {
+      var detailsWrap = document.createElement('div');
+      detailsWrap.className = 'iw-detail-region-details';
+
+      for (var d = 0; d < detailRows.length; d += 1) {
+        detailsWrap.appendChild(createDetailRow(detailRows[d]));
+      }
+
+      section.appendChild(detailsWrap);
     }
 
     var months = region.months || [];
@@ -923,6 +976,14 @@
 
     for (var i = 0; i < regions.length; i += 1) {
       regionsWrap.appendChild(createRegionElement(regions[i]));
+    }
+
+    // [라벨 폭 통일] 실제 문서에 삽입되어 레이아웃이 잡힌 뒤에 폭을 재야 정확해서,
+    // appendChild가 다 끝난 이 시점에 지역별로 한 번씩 실행함 (지역 간에는 서로 영향 없음)
+    var insertedRegionEls = regionsWrap.querySelectorAll('.iw-detail-region');
+
+    for (var ri = 0; ri < insertedRegionEls.length; ri += 1) {
+      equalizeRegionLabels(insertedRegionEls[ri]);
     }
 
     var infoWrap = root.querySelector('.iw-detail-info');
