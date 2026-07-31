@@ -12,7 +12,7 @@
    - README.md         : 설치 방법, 각 파일 역할, 전체 데이터 구조 설명
 
    각 구역은 대괄호 태그로 표시되어 있어서, 이 파일 안에서 Ctrl+F로
-   [사진] [배지] [제목] [지역] [달력] [모집인원] [주요내용] [문의]
+   [사진] [배지] [제목] [한줄소개] [지역] [달력] [모집인원] [주요내용] [문의]
    [소제목] [표] [도식] 같은 단어를 검색하면 관련된 CSS만 모아서 볼 수 있습니다.
 ================================================================== */
 
@@ -48,6 +48,7 @@
 /* 데이터를 못 불러왔을 때(에러 상태) 사진 자리 문구만 남기고 나머지는 숨김 */
 .iw-detail-card[data-status="error"] .iw-detail-badge,
 .iw-detail-card[data-status="error"] .iw-detail-title,
+.iw-detail-card[data-status="error"] .iw-detail-subtitle,
 .iw-detail-card[data-status="error"] .iw-detail-divider,
 .iw-detail-card[data-status="error"] .iw-detail-regions,
 .iw-detail-card[data-status="error"] .iw-detail-info {
@@ -109,6 +110,33 @@
   line-height: 1.35;
   letter-spacing: -0.03em;
   word-break: keep-all; /* 한글 제목이 어절 중간에서 줄바꿈되지 않도록 */
+}
+
+/* ------------------------------------------------------------
+   [한줄소개] 제목 바로 아래, 구분선 위에 들어가는 짧은 소개 문구.
+   이 요소는 아임웹 페이지 스니펫에 미리 있는 게 아니라, detail-widget.js가
+   subtitleLabel/subtitleText 값이 있을 때만 실행 중에 직접 만들어 넣습니다
+   (subtitleText가 비어있으면 이 요소 자체가 화면에 안 나타남).
+
+   라벨명은 관리 화면에서 자유 입력(예: "한 줄 소개", "핵심 요약").
+   내용이 길어도 줄바꿈을 직접 입력할 수 없는 대신, 카드 폭에 맞춰
+   자동으로 다음 줄로 넘어갑니다 (글자 크기는 항상 고정 — 카드마다
+   크기가 들쭉날쭉해지는 것을 방지).
+------------------------------------------------------------ */
+
+.iw-detail-card .iw-detail-subtitle {
+  margin: -8px 32px 22px; /* [한줄소개] 제목과의 간격(음수로 살짝 당김), 좌우 여백은 제목과 동일 */
+  color: #444444; /* [한줄소개] 본문 글자색 */
+  font-size: 16px; /* [한줄소개] 글자 크기 — 텍스트가 길어도 이 값은 고정, 자동 줄바꿈만 됨 */
+  font-weight: 600;
+  line-height: 1.6;
+  word-break: keep-all; /* 어절 단위로만 줄바꿈 (한글 중간에서 안 끊김) */
+}
+
+.iw-detail-card .iw-detail-subtitle-label {
+  margin-right: 8px;
+  color: var(--accent); /* [한줄소개] 라벨 글자색 = 카테고리 포인트색 */
+  font-weight: 800;
 }
 
 .iw-detail-card .iw-detail-divider {
@@ -544,6 +572,7 @@
 @media (max-width: 640px) {
   .iw-detail-card .iw-detail-badge,
   .iw-detail-card .iw-detail-title,
+  .iw-detail-card .iw-detail-subtitle,
   .iw-detail-card .iw-detail-divider,
   .iw-detail-card .iw-detail-regions,
   .iw-detail-card .iw-detail-info {
@@ -558,6 +587,10 @@
 
   .iw-detail-card .iw-detail-title {
     font-size: 22px;
+  }
+
+  .iw-detail-card .iw-detail-subtitle {
+    font-size: 15px;
   }
 
   .iw-detail-card .iw-detail-photo {
