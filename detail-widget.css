@@ -459,7 +459,9 @@
 }
 
 /* ------------------------------------------------------------
-   [서식] 추가정보 블록 안 서식 텍스트 요소 — 관리 화면 굵게/기울임/취소선/크기/색이 그대로 반영됨
+   [서식] 추가정보 블록 안 서식 텍스트 요소
+   글자 크기·줄간격은 여기 고정값이 아니라, detail-widget.js가 요소별 fontSize/lineHeight
+   값에 따라 실행 중에 인라인 스타일로 덮어씀 (아래 값은 그 값이 없을 때의 기본값)
 ------------------------------------------------------------ */
 
 .iw-detail-card .iw-detail-info-richtext {
@@ -473,6 +475,22 @@
 .iw-detail-card .iw-detail-info-richtext b,
 .iw-detail-card .iw-detail-info-richtext strong {
   font-weight: 800;
+}
+
+/* [글머리] 관리 화면 "• 글머리" 버튼으로 만든 실제 목록(ul/li). 글자 크기·줄간격은
+   부모(.iw-detail-info-richtext)에서 상속되므로 여기서 따로 안 정해도 됨 */
+.iw-detail-card .iw-detail-info-richtext ul,
+.iw-detail-card .iw-detail-info-richtext ol {
+  margin: 0;
+  padding-left: 22px;
+}
+
+.iw-detail-card .iw-detail-info-richtext li {
+  margin-bottom: 6px;
+}
+
+.iw-detail-card .iw-detail-info-richtext li:last-child {
+  margin-bottom: 0;
 }
 
 /* 소제목/텍스트/사진/표/도식을 하나의 세로 묶음으로 감싸는 그릇 (구분선 없이 순서대로 쌓임) */
