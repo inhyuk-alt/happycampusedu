@@ -116,6 +116,23 @@
 
   var WEEKDAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 
+  // [추가정보 - 텍스트 블록] 글자 크기 / 줄간격 값 매핑.
+  // ⚠️ 관리 웹앱 Index.html의 옵션 값(small/medium/large/xlarge, tight/normal/wide/wider)과
+  // 이름이 반드시 일치해야 함 — 한쪽만 바꾸면 관리 화면 선택값과 실제 페이지 결과가 어긋남
+  var TEXT_FONT_SIZE_MAP = {
+    small: '14px',
+    medium: '16px',
+    large: '19px',
+    xlarge: '22px'
+  };
+
+  var TEXT_LINE_HEIGHT_MAP = {
+    tight: '1.4',
+    normal: '1.7',
+    wide: '2.0',
+    wider: '2.4'
+  };
+
   function pad2(value) {
     var text = String(value);
     return text.length < 2 ? '0' + text : text;
@@ -617,6 +634,10 @@
       var textEl = document.createElement('div');
       textEl.className = 'iw-detail-info-richtext';
       textEl.innerHTML = element.html;
+      // [글자 크기 / 줄간격] 블록 전체에 적용되는 값. 값이 없는 예전 데이터는
+      // CSS 기본값(font-size:16px, line-height:1.7)이 그대로 적용됨
+      textEl.style.fontSize = TEXT_FONT_SIZE_MAP[element.fontSize] || '';
+      textEl.style.lineHeight = TEXT_LINE_HEIGHT_MAP[element.lineHeight] || '';
       return textEl;
     }
 
