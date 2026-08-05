@@ -653,7 +653,33 @@
       return buildDiagramElement(element);
     }
 
+    if (element.type === 'button') {
+      return buildButtonElement(element);
+    }
+
     return null;
+  }
+
+  // [버튼] 문구 + 링크가 둘 다 있어야 노출됨 (하나라도 비면 자동으로 숨김, 실수 방지용).
+  // 색은 카테고리 포인트색(--accent, 이미 root에 지정돼 있음)을 그대로 씀. 새 탭으로 열림.
+  function buildButtonElement(element) {
+    if (!element || !element.text || !element.url) {
+      return null;
+    }
+
+    var wrap = document.createElement('div');
+    wrap.className = 'iw-detail-info-button-wrap';
+
+    var link = document.createElement('a');
+    link.className = 'iw-detail-info-button';
+    link.setAttribute('data-style', element.style === 'outline' ? 'outline' : 'filled');
+    link.href = element.url;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.textContent = element.text;
+
+    wrap.appendChild(link);
+    return wrap;
   }
 
   // [표] 칸 하나를 표준 형태 { text, rowspan, colspan, hidden }로 맞춤
