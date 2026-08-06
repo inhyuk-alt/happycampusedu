@@ -106,10 +106,12 @@
   // 카테고리별 배경색/구분선(포인트)색.
   // ⚠️ 관리 웹앱의 Code.gs 안 CATEGORY_STYLE_MAP과 항상 같은 값으로 맞춰야 함
   // (한쪽만 고치면 관리 화면 미리보기 색과 실제 페이지 색이 어긋남)
+  // text: 순수 "글자색"으로만 쓰이는 곳(한줄소개 라벨/지역명/블록 라벨/소제목) 전용 색.
+  // 생략하면 line 값을 그대로 씀. 배경/구분선/버튼/배지는 항상 line을 그대로 쓰고 절대 안 바뀜.
   var CATEGORY_STYLE_MAP = {
     '인생전환': { bg: '#ffe0eb', line: '#ff7dad' },
     '재무설계': { bg: '#d3d1f6', line: '#6e69da' },
-    '관계소통': { bg: '#f9e8b2', line: '#f4af2c' },
+    '관계소통': { bg: '#f9e8b2', line: '#f4af2c', text: '#965800' },
     '사회활동': { bg: '#bcf0e4', line: '#23ceaa' },
     '일커리어': { bg: '#cef4ff', line: '#47aaff' }
   };
@@ -999,6 +1001,9 @@
 
     root.style.setProperty('--detail-bg', categoryStyle.bg);
     root.style.setProperty('--accent', categoryStyle.line);
+    // [텍스트 전용색] 순수 글자색으로 쓰이는 4곳(한줄소개 라벨/지역명/블록 라벨/소제목)에서만 사용.
+    // text가 따로 없으면 line과 동일한 값을 써서 기존과 똑같이 보임
+    root.style.setProperty('--accent-text', categoryStyle.text || categoryStyle.line);
     root.setAttribute('data-status', 'ready');
 
     var photo = root.querySelector('.iw-detail-photo');
