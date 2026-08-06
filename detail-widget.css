@@ -604,6 +604,20 @@
   text-align: center;
 }
 
+/* [버튼 블록] 문의처처럼 독립된 하단 정보 블록. 버튼이 여러 개면 가로로 나란히 배치됨.
+   개별 iw-detail-info-button-wrap의 margin은 여기 gap으로 대신하므로 0으로 없앰 */
+.iw-detail-card .iw-detail-info-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+}
+
+.iw-detail-card .iw-detail-info-buttons .iw-detail-info-button-wrap {
+  margin: 0;
+}
+
 .iw-detail-card .iw-detail-info-button {
   display: inline-block;
   padding: 12px 28px;
