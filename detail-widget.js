@@ -957,11 +957,30 @@
       return hasContent ? wrap : null;
     }
 
+    if (block.type === 'button') {
+      // [버튼] 문의처(contacts)처럼 독립된 블록. 여러 개면 나란히 배치됨(각 버튼은
+      // buildButtonElement가 문구+링크 둘 다 있을 때만 만들어줌 — 하나라도 비면 자동 제외)
+      var buttonItems = block.items || [];
+      var buttonsWrap = document.createElement('div');
+      buttonsWrap.className = 'iw-detail-info-buttons';
+      var hasButton = false;
+
+      for (var bi = 0; bi < buttonItems.length; bi += 1) {
+        var buttonNode = buildButtonElement(buttonItems[bi]);
+
+        if (buttonNode) {
+          buttonsWrap.appendChild(buttonNode);
+          hasButton = true;
+        }
+      }
+
+      return hasButton ? buttonsWrap : null;
+    }
+
     // recruit: 단순 텍스트 한 줄
     if (!block.value) {
       return null;
     }
-
     var value = document.createElement('div');
     value.className = 'iw-detail-info-value';
     value.textContent = block.value;
