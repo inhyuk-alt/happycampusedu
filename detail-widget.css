@@ -218,7 +218,7 @@
   background: var(--accent); /* [지역] 라벨 배경색 = 카테고리 포인트색 */
   color: #ffffff; /* [지역] 라벨 글자색 고정(검정) — 파스텔 배경 위에서 흰 글자보다 대비가 훨씬 좋음 */
   font-weight: 800;
-  font-size: 13px;
+  font-size: 15px;
   white-space: nowrap;
 }
 
