@@ -28,6 +28,7 @@
 
 .iw-detail-card {
   --accent: #d97b3f; /* 포인트색 기본값(예비값). 실제로는 JS가 카테고리에 맞는 색으로 교체함 */
+  --accent-text: #d97b3f; /* 텍스트 전용색 기본값(예비값). 실제로는 JS가 카테고리에 맞는 색으로 교체함 */
   --detail-bg: #fdf1dc; /* 카드 배경색 기본값(예비값). 실제로는 JS가 카테고리에 맞는 색으로 교체함 */
 
   width: 100%;
@@ -135,7 +136,7 @@
 
 .iw-detail-card .iw-detail-subtitle-label {
   margin-right: 8px;
-  color: var(--accent); /* [한줄소개] 라벨 글자색 = 카테고리 포인트색 */
+  color: var(--accent-text); /* [한줄소개] 라벨 글자색 = 카테고리 텍스트 전용색(글자만 분리, 2026-08) */
   font-weight: 800;
 }
 
@@ -162,8 +163,8 @@
 
 .iw-detail-card .iw-detail-region-name {
   margin: 0 0 14px;
-  /* [지역] 지역명 글자색. region.nameColor가 있으면 그 지역만 그 색, 없으면 카테고리 포인트색 */
-  color: var(--region-name-color, var(--accent));
+  /* [지역] 지역명 글자색. region.nameColor가 있으면 그 지역만 그 색, 없으면 카테고리 텍스트 전용색 */
+  color: var(--region-name-color, var(--accent-text));
   font-size: 20px; /* [지역] 지역명 글자 크기 */
   font-weight: 900;
   letter-spacing: -0.01em;
@@ -336,7 +337,7 @@
 
 .iw-detail-card .iw-detail-info-label {
   margin-bottom: 10px; /* 라벨과 그 아래 내용 사이 간격 */
-  color: var(--accent); /* 라벨 글자색 = 카테고리 포인트색 */
+  color: var(--accent-text); /* 라벨 글자색 = 카테고리 텍스트 전용색 (배경/구분선용 --accent와 분리, 2026-08) */
   font-size: 18px;
   font-weight: 900;
   letter-spacing: -0.01em;
@@ -504,7 +505,7 @@
 
 .iw-detail-card .iw-detail-info-subheading {
   margin: 0;
-  color: var(--accent); /* [소제목] 글자색 = 카테고리 포인트색 */
+  color: var(--accent-text); /* [소제목] 글자색 = 카테고리 텍스트 전용색 (배경용 --accent와 분리, 2026-08) */
   font-size: 20px;
   font-weight: 800;
   letter-spacing: -0.01em;
