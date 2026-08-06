@@ -620,9 +620,9 @@
 
 .iw-detail-card .iw-detail-info-button {
   display: inline-block;
-  padding: 18px 40px;
+  padding: 18px 60px;
   border-radius: 999px;
-  font-size: 20px;
+  font-size: 30px;
   font-weight: 700;
   text-decoration: none;
   border: 2px solid var(--accent);
