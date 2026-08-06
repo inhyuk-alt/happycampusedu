@@ -89,7 +89,7 @@
   border-radius: 999px; /* [배지] 알약 모양 정도 */
   background: var(--accent); /* [배지] 배경색 = 카테고리 포인트색 그대로 */
   color: #ffffff; /* [배지] 글자색 */
-  font-size: 14px; /* [배지] 글자 크기 */
+  font-size: 20px; /* [배지] 글자 크기 */
   font-weight: 800;
   letter-spacing: -0.02em;
 }
@@ -216,7 +216,7 @@
   padding: 5px 12px;
   border-radius: 999px; /* [지역] 세부항목 라벨(날짜/시간 등) 알약형 배지 모양 */
   background: var(--accent); /* [지역] 라벨 배경색 = 카테고리 포인트색 */
-  color: #000000; /* [지역] 라벨 글자색 고정(검정) — 파스텔 배경 위에서 흰 글자보다 대비가 훨씬 좋음 */
+  color: #ffffff; /* [지역] 라벨 글자색 고정(검정) — 파스텔 배경 위에서 흰 글자보다 대비가 훨씬 좋음 */
   font-weight: 800;
   font-size: 13px;
   white-space: nowrap;
