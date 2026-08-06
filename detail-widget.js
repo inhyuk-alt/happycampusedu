@@ -887,15 +887,24 @@
 
       var elements = block.elements || [];
 
+      var previousType = null;
+
       for (var ei = 0; ei < elements.length; ei += 1) {
         var elementEl = buildCustomElementNode(elements[ei]);
 
         if (elementEl) {
           if (hasContent) {
-            elementEl.style.marginTop = '14px';
+            if (elements[ei].type === 'subheading') {
+              elementEl.style.marginTop = '32px'; // 소제목 위 여백 — 윗 블록과 확실히 구분
+            } else if (previousType === 'subheading') {
+              elementEl.style.marginTop = '18px'; // 소제목 바로 아래 여백 — 위 여백보다 작게
+            } else {
+              elementEl.style.marginTop = '14px'; // 그 외 일반 요소 간 여백 — 기존과 동일
+            }
           }
           wrap.appendChild(elementEl);
           hasContent = true;
+          previousType = elements[ei].type;
         }
       }
 
