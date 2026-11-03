@@ -105,10 +105,12 @@
   // 모든 상세페이지 공통 설정: 여기 두 값만 이 파일 안에서 관리하면 됨
   // ------------------------------------------------------------
 
-  // [1단계 통합] 메뉴별 "programs" 시트를 웹에 게시(CSV)한 주소. 시트를 합친 뒤(3단계)엔 하나만 남김
+  // [3단계] 통합 시트의 public 탭(공개 행만)을 웹에 게시(CSV)한 주소. 행마다 menu 칸이 있어서 메뉴는 자동 구분.
+  // 예전 메뉴별 시트 주소(되돌릴 때만):
+  //   edu: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRphcNuCkSuwGWapzV-nfMQUkylKz3J_qJEnczUfILvM6PBonOBIJiV4RJc5uhhKwcukiUbfphKeCrq/pub?gid=147504769&single=true&output=csv'
+  //   community: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQSJc7a_m0m9OFAyuUY9UbUkK-BscmJKvMa1cHsHMYlWP3UBa8kNybh528WC2KpkNXsMWaILtnexIEb/pub?gid=1937397128&single=true&output=csv'
   var SHEET_CSV_URLS = {
-    edu: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRphcNuCkSuwGWapzV-nfMQUkylKz3J_qJEnczUfILvM6PBonOBIJiV4RJc5uhhKwcukiUbfphKeCrq/pub?gid=147504769&single=true&output=csv',
-    community: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQSJc7a_m0m9OFAyuUY9UbUkK-BscmJKvMa1cHsHMYlWP3UBa8kNybh528WC2KpkNXsMWaILtnexIEb/pub?gid=1937397128&single=true&output=csv'
+    unified: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTAuSW0TCzXc6K6iojr8m5EDJbRFvdO9Z1r-uO1AijDvtLVITVWwOY1v-HJrUPUx9ehGqpo9s0zYoZn/pub?gid=1797732858&single=true&output=csv'
   };
 
   // [1단계 통합] 진단 로그는 평소엔 꺼둠(방문자 콘솔에 시트 내용이 찍히지 않게). 원인을 봐야 할 때만
@@ -1794,7 +1796,10 @@ var TEXT_LINE_HEIGHT_MAP = {
           }
 
           settled = true;
-          program.menu = menu;
+          // [3단계] 통합 시트는 행마다 menu 칸이 있음. 없으면(예전 시트) 어느 시트에서 찾았는지로 정함
+          if (program.menu !== 'edu' && program.menu !== 'community') {
+            program.menu = menu === 'edu' || menu === 'community' ? menu : '';
+          }
           showProgram_(root, program);
         })
         .catch(function (err) {
