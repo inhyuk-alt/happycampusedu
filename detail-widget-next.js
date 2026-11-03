@@ -1,5 +1,5 @@
 /* ==================================================================
-   detail-widget.js [1단계 통합본]
+   detail-widget.js [1단계 통합본 + 2단계 색 변수]
    ------------------------------------------------------------------
    교육프로그램(happycampusedu)과 커뮤니티 공간(happyspace) 두 메뉴가 똑같은 이 파일
    하나를 씁니다. 두 저장소에 같은 파일을 올리면 되고, 아임웹 페이지 코드는 그대로 둡니다.
@@ -1438,7 +1438,7 @@ var TEXT_LINE_HEIGHT_MAP = {
         var name = document.createElement('span');
         name.className = 'iw-detail-info-contact-name';
         name.textContent = contact.name || '';
-        name.style.color = contact.color || '#222222';
+        if (contact.color) name.style.color = contact.color; // 없으면 CSS 기본색(--text-strong)
 
         var phone = document.createElement('span');
         phone.className = 'iw-detail-info-contact-phone';
