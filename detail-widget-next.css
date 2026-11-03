@@ -1059,3 +1059,23 @@
     gap: 2px;
   }
 }
+
+/* ------------------------------------------------------------
+   [4A] 새 요소 · 글자 크기 단계
+------------------------------------------------------------ */
+
+/* [강조 상자] 배경이 깔린 안내 문단 */
+.iw-detail-card .iw-detail-info-callout {
+  background: var(--surface);
+  border-left: 4px solid var(--accent);
+  border-radius: 10px;
+  padding: 14px 16px;
+  color: var(--text-strong);
+  line-height: 1.7;
+}
+
+/* [글자 크기 단계] 관리웹앱에서 고른 단계. 값은 detail-widget.js가 레이아웃 설정에서 넣어줌 */
+.iw-detail-card .iw-fs-small { font-size: var(--iw-fs-small); }
+.iw-detail-card .iw-fs-medium { font-size: var(--iw-fs-medium); }
+.iw-detail-card .iw-fs-large { font-size: var(--iw-fs-large); }
+.iw-detail-card .iw-fs-xlarge { font-size: var(--iw-fs-xlarge); }
