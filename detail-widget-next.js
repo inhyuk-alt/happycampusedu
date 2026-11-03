@@ -113,6 +113,14 @@
     unified: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTAuSW0TCzXc6K6iojr8m5EDJbRFvdO9Z1r-uO1AijDvtLVITVWwOY1v-HJrUPUx9ehGqpo9s0zYoZn/pub?gid=1797732858&single=true&output=csv'
   };
 
+  // [4A] 통합 시트의 categories·layout_settings 탭을 웹에 게시(CSV)한 주소.
+  // 비워두면 요청하지 않고 아래 파일 안의 색표·글자 단계를 그대로 씀.
+  // 채워두면 관리웹앱에서 바꾼 카테고리 색·글자 크기 단계가 코드 수정 없이 바로 반영됨
+  var CATEGORIES_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTAuSW0TCzXc6K6iojr8m5EDJbRFvdO9Z1r-uO1AijDvtLVITVWwOY1v-HJrUPUx9ehGqpo9s0zYoZn/pub?gid=1248969931&single=true&output=csv';
+  var LAYOUT_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTAuSW0TCzXc6K6iojr8m5EDJbRFvdO9Z1r-uO1AijDvtLVITVWwOY1v-HJrUPUx9ehGqpo9s0zYoZn/pub?gid=219139048&single=true&output=csv';
+  // 설정 CSV를 기다리는 최대 시간. 넘으면 파일 안 값으로 먼저 그림
+  var SETTINGS_WAIT_MS = 3000;
+
   // [1단계 통합] 진단 로그는 평소엔 꺼둠(방문자 콘솔에 시트 내용이 찍히지 않게). 원인을 봐야 할 때만
   // 페이지 주소 끝에 ?iwdebug=1 을 붙여 열면 예전처럼 자세한 진단이 콘솔에 나옴
   var DEBUG = /[?&]iwdebug=1(&|$)/.test(window.location.search);
@@ -253,6 +261,241 @@ var TEXT_LINE_HEIGHT_MAP = {
     var holder = document.createElement('div');
     holder.appendChild(template.content);
     return holder.innerHTML;
+  }
+
+  // ------------------------------------------------------------
+  // [4A] IWFormat — 데이터 글 칸을 다루는 순수 함수 모음.
+  // 관리웹앱 편집 화면과 시험이 window.IWFormat으로 같이 씀 (페이지 그리기와는 무관)
+  // 경로는 "regions.0.detailRows.1.content" 처럼 점으로 잇고, 숫자는 배열 번호
+  // ------------------------------------------------------------
+  var IWFormat = {
+    FMT_VERSION: 2,
+
+    getAt: function (data, path) {
+      var parts = String(path).split('.');
+      var cur = data;
+      for (var i = 0; i < parts.length; i += 1) {
+        if (cur == null || typeof cur !== 'object') return undefined;
+        cur = cur[parts[i]];
+      }
+      return cur;
+    },
+
+    setAt: function (data, path, value) {
+      var parts = String(path).split('.');
+      var cur = data;
+      for (var i = 0; i < parts.length - 1; i += 1) {
+        if (cur[parts[i]] == null) cur[parts[i]] = /^\d+$/.test(parts[i + 1]) ? [] : {};
+        cur = cur[parts[i]];
+      }
+      cur[parts[parts.length - 1]] = value;
+    },
+
+    escapeHtml: function (text) {
+      return String(text == null ? '' : text)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    },
+
+    plainText: function (html) {
+      return String(html == null ? '' : html)
+        .replace(/<br\s*\/?>/gi, ' ')
+        .replace(/<[^>]*>/g, '')
+        .replace(/&nbsp;/g, ' ').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&')
+        .replace(/\s+/g, ' ').trim();
+    },
+
+    // 그 프로그램의 글 칸 경로 전부 (페이지에 보이는 순서). 값이 문자열인 칸만
+    textPaths: function (data) {
+      var out = ['titleHtml'];
+      data = data || {};
+
+      function add(obj, base, keys) {
+        if (!obj || typeof obj !== 'object') return;
+        for (var k = 0; k < keys.length; k += 1) {
+          if (typeof obj[keys[k]] === 'string') out.push(base + keys[k]);
+        }
+      }
+
+      function each(list, base, fn) {
+        if (!Array.isArray(list)) return;
+        for (var i = 0; i < list.length; i += 1) fn(list[i], base + i + '.');
+      }
+
+      function strings(list, base) {
+        each(list, base, function (v, b) { if (typeof v === 'string') out.push(b.slice(0, -1)); });
+      }
+
+      add(data, '', ['subtitleLabel', 'subtitleText']);
+
+      function visitRegion(region, rb) {
+        add(region, rb, ['name', 'subtitle']);
+        each(region && region.detailRows, rb + 'detailRows.', function (row, b) { add(row, b, ['label', 'content']); });
+      }
+
+      function visitBlock(block, bb) {
+        add(block, bb, ['label', 'value', 'html']);
+        each(block && block.items, bb + 'items.', function (item, ib) {
+          if (typeof item === 'string') out.push(ib.slice(0, -1));
+          else add(item, ib, ['name', 'phone', 'address', 'text', 'caption']);
+        });
+        strings(block && block.lines, bb + 'lines.');
+
+        each(block && block.elements, bb + 'elements.', function (el, eb) {
+          add(el, eb, ['text', 'html']);
+          strings(el && el.headers, eb + 'headers.');
+          each(el && el.rows, eb + 'rows.', function (row, rb) {
+            each(row, rb, function (cell, cb) {
+              if (typeof cell === 'string') out.push(cb.slice(0, -1));
+              else add(cell, cb, ['text', 'html']);
+            });
+          });
+          each(el && el.items, eb + 'items.', function (item, ib) {
+            if (typeof item === 'string') out.push(ib.slice(0, -1));
+            else add(item, ib, ['caption']);
+          });
+          each(el && el.steps, eb + 'steps.', function (step, sb) { add(step, sb, ['html']); });
+          each(el && el.groups, eb + 'groups.', function (group, gb) {
+            add(group, gb, ['name']);
+            each(group && group.sessions, gb + 'sessions.', function (s, sb) {
+              add(s, sb, ['title', 'time', 'shortDesc', 'capacity', 'note', 'calendarLabel', 'detailHtml']);
+              each(s && s.detailRows, sb + 'detailRows.', function (row, b) { add(row, b, ['label', 'content']); });
+            });
+          });
+        });
+      }
+
+      IWFormat.normalizeOrder(data).forEach(function (key) {
+        var target = IWFormat.getAt(data, key);
+        if (key.indexOf('regions.') === 0) visitRegion(target, key + '.');
+        else visitBlock(target, key + '.');
+      });
+
+      return out;
+    },
+
+    // 큰 블록(지역·정보 블록) 그리는 순서. order가 없으면 지역 전부 → 정보 블록 전부(지금 방식).
+    // 잘못된 값·중복은 빼고, order에 빠진 블록은 원래 순서대로 끝에 붙임
+    normalizeOrder: function (data) {
+      data = data || {};
+      var all = [];
+      var regions = Array.isArray(data.regions) ? data.regions : [];
+      var blocks = data.info && Array.isArray(data.info.blocks) ? data.info.blocks : [];
+      for (var r = 0; r < regions.length; r += 1) all.push('regions.' + r);
+      for (var b = 0; b < blocks.length; b += 1) all.push('info.blocks.' + b);
+      if (!Array.isArray(data.order)) return all;
+
+      var seen = {};
+      var result = [];
+      data.order.concat(all).forEach(function (key) {
+        if (all.indexOf(key) !== -1 && !seen[key]) {
+          seen[key] = true;
+          result.push(key);
+        }
+      });
+      return result;
+    },
+
+    // 예전 형식(글자만) → 새 형식(fmt 2, 모든 글 칸이 HTML). 화면이 지금과 같게 되는 최소한만 바꿈.
+    // 사람이 줄을 나누려고 넣었던 "|"는 지금 위젯이 해석하던 그대로 바꾸고, 그 칸을 review로 알려줌
+    toFmt2: function (data, program) {
+      var copy = JSON.parse(JSON.stringify(data || {}));
+
+      if (copy.fmt === IWFormat.FMT_VERSION) {
+        return { data: copy, review: [] };
+      }
+
+      var review = [];
+      var esc = IWFormat.escapeHtml;
+
+      // 표 칸·표 머리: "|" 자리 = 줄바꿈 (fillTableCell_과 같은 규칙)
+      function pipeBreaks(text, path) {
+        var flat = String(text).replace(/\r\n|\r|\n/g, ' ').replace(/[ \t]+/g, ' ');
+        if (flat.indexOf('|') !== -1) review.push({ path: path, reason: 'pipe-linebreak' });
+        return flat.split('|').map(function (part) { return esc(part.trim()); }).join('<br>');
+      }
+
+      // 지역 세부 내용: "|" 자리 = 날짜 덩어리 나눔 (createDetailRow와 같은 규칙)
+      function pipeChunks(text, path) {
+        if (String(text).indexOf('|') !== -1) review.push({ path: path, reason: 'pipe-chunks' });
+        return String(text).split('|')
+          .map(function (part) { return part.trim(); })
+          .filter(function (part) { return part !== ''; })
+          .map(function (part) { return '<span class="iw-detail-region-detail-chunk">' + esc(part) + '</span>'; })
+          .join(' | ');
+      }
+
+      IWFormat.textPaths(copy).forEach(function (path) {
+        if (path === 'titleHtml' || /\.(html|detailHtml)$/.test(path) || /\.lines\.\d+$/.test(path)) {
+          return;
+        }
+
+        var cellMatch = path.match(/^(.*\.rows\.\d+\.\d+)(\.text)?$/);
+        if (cellMatch) {
+          var cell = IWFormat.getAt(copy, cellMatch[1]);
+          if (typeof cell === 'string') {
+            IWFormat.setAt(copy, cellMatch[1], { text: cell, html: pipeBreaks(cell, cellMatch[1] + '.html') });
+          } else if (cellMatch[2] && !cell.html) {
+            cell.html = pipeBreaks(cell.text, cellMatch[1] + '.html');
+          }
+          return;
+        }
+
+        var value = IWFormat.getAt(copy, path);
+        if (/\.headers\.\d+$/.test(path)) {
+          IWFormat.setAt(copy, path, pipeBreaks(value, path));
+        } else if (/detailRows\.\d+\.content$/.test(path)) {
+          IWFormat.setAt(copy, path, pipeChunks(value, path));
+        } else {
+          IWFormat.setAt(copy, path, esc(value));
+        }
+      });
+
+      copy.fmt = IWFormat.FMT_VERSION;
+      copy.titleHtml = esc((program && program.title) || '');
+      return { data: copy, review: review };
+    }
+  };
+
+  window.IWFormat = IWFormat;
+
+  // [4A] 지금 그리는 프로그램이 새 형식(fmt 2)인지. renderProgram에서 정함
+  var currentFmt2_ = false;
+
+  // 데이터 글 넣기: 새 형식이면 서식 있는 글(보안 필터 거침), 예전 형식이면 지금처럼 글자만
+  function setText_(el, value, key) {
+    var text = value == null ? '' : value;
+    if (currentFmt2_) {
+      el.innerHTML = sanitizeHtml_(text);
+    } else {
+      el.textContent = text;
+    }
+    if (key) tagPath_(el, key);
+  }
+
+  // [4A] 편집 모드 표시. 관리웹앱 편집 화면이 window.__IW_EDIT__ = true 로 켰을 때만,
+  // 글 칸에는 data-iw-path(데이터 경로), 블록에는 data-iw-block 을 붙임. 방문자 화면엔 아무것도 안 붙음.
+  // 그리는 중인 위치는 pathStack_ 에 쌓아둠 (예: ['info.blocks.2.', 'elements.0.'])
+  var pathStack_ = [];
+
+  function isEditMode_() {
+    return window.__IW_EDIT__ === true;
+  }
+
+  function withPath_(prefix, fn) {
+    pathStack_.push(prefix);
+    try {
+      return fn();
+    } finally {
+      pathStack_.pop();
+    }
+  }
+
+  function tagPath_(el, key) {
+    if (isEditMode_() && el) el.setAttribute('data-iw-path', pathStack_.join('') + key);
+  }
+
+  function tagBlock_(el, name) {
+    if (isEditMode_() && el) el.setAttribute('data-iw-block', name || pathStack_.join('').replace(/\.$/, ''));
   }
 
   function pad2(value) {
@@ -631,7 +874,14 @@ var TEXT_LINE_HEIGHT_MAP = {
     var weekday = WEEKDAY_LABELS[new Date(year, month - 1, day).getDay()];
     var caption = document.createElement('div');
     caption.className = 'iw-detail-session-calendar-caption';
-    caption.textContent = '★ ' + month + '월 ' + day + '일(' + weekday + ')' + (labelText ? ' · ' + labelText : '');
+    if (isEditMode_() && labelText) {
+      setText_(caption, '★ ' + month + '월 ' + day + '일(' + weekday + ') · ');
+      var labelPart = document.createElement('span');
+      setText_(labelPart, labelText, 'calendarLabel');
+      caption.appendChild(labelPart);
+    } else {
+      setText_(caption, '★ ' + month + '월 ' + day + '일(' + weekday + ')' + (labelText ? ' · ' + labelText : ''));
+    }
     wrap.appendChild(caption);
 
     return wrap;
@@ -665,7 +915,7 @@ var TEXT_LINE_HEIGHT_MAP = {
     if (session.time) {
       var timeEl = document.createElement('span');
       timeEl.className = 'iw-detail-session-card-date-time';
-      timeEl.textContent = session.time;
+      setText_(timeEl, session.time, 'time');
       dateBox.appendChild(timeEl);
     }
 
@@ -677,14 +927,14 @@ var TEXT_LINE_HEIGHT_MAP = {
     if (session.title) {
       var titleEl = document.createElement('div');
       titleEl.className = 'iw-detail-session-card-title';
-      titleEl.textContent = session.title;
+      setText_(titleEl, session.title, 'title');
       body.appendChild(titleEl);
     }
 
     if (session.shortDesc) {
       var descEl = document.createElement('div');
       descEl.className = 'iw-detail-session-card-desc';
-      descEl.textContent = session.shortDesc;
+      setText_(descEl, session.shortDesc, 'shortDesc');
       body.appendChild(descEl);
     }
 
@@ -695,7 +945,18 @@ var TEXT_LINE_HEIGHT_MAP = {
     if (metaParts.length > 0) {
       var metaEl = document.createElement('div');
       metaEl.className = 'iw-detail-session-card-meta';
-      metaEl.textContent = metaParts.join(' · ');
+      if (isEditMode_()) {
+        // 편집 모드에선 정원·강사를 각각 고칠 수 있게 나눠 담음 (보이는 모습은 같음)
+        [['capacity', session.capacity], ['note', session.note]].forEach(function (pair) {
+          if (!pair[1]) return;
+          if (metaEl.childNodes.length) metaEl.appendChild(document.createTextNode(' · '));
+          var part = document.createElement('span');
+          setText_(part, pair[1], pair[0]);
+          metaEl.appendChild(part);
+        });
+      } else {
+        setText_(metaEl, metaParts.join(' · '));
+      }
       body.appendChild(metaEl);
     }
 
@@ -733,6 +994,7 @@ var TEXT_LINE_HEIGHT_MAP = {
         detailEl.style.fontSize = TEXT_FONT_SIZE_MAP[session.detailFontSize || 'medium'] || '';
         detailEl.style.lineHeight = TEXT_LINE_HEIGHT_MAP[session.detailLineHeight || 'normal'] || '';
         detailEl.innerHTML = sanitizeHtml_(session.detailHtml);
+        tagPath_(detailEl, 'detailHtml');
         expandInner.appendChild(detailEl);
       }
 
@@ -744,7 +1006,7 @@ var TEXT_LINE_HEIGHT_MAP = {
         sessionDetailRowsWrap.className = 'iw-detail-region-details iw-detail-session-card-detail-rows';
 
         for (var sdr = 0; sdr < sessionDetailRows.length; sdr += 1) {
-          sessionDetailRowsWrap.appendChild(createDetailRow(sessionDetailRows[sdr]));
+          sessionDetailRowsWrap.appendChild(withPath_('detailRows.' + sdr + '.', function () { return createDetailRow(sessionDetailRows[sdr]); }));
         }
 
         expandInner.appendChild(sessionDetailRowsWrap);
@@ -847,6 +1109,10 @@ var TEXT_LINE_HEIGHT_MAP = {
     wrap.className = 'iw-detail-sessions';
 
     groups.forEach(function (group) {
+      withPath_('groups.' + element.groups.indexOf(group) + '.', function () { buildSessionGroup_(group); });
+    });
+
+    function buildSessionGroup_(group) {
       var sessions = (group.sessions || []).filter(function (s) { return s && (s.title || '').trim(); });
 
       if (sessions.length === 0) {
@@ -862,7 +1128,7 @@ var TEXT_LINE_HEIGHT_MAP = {
       if (group.name) {
         var badge = document.createElement('span');
         badge.className = 'iw-detail-sessions-group-badge';
-        badge.textContent = group.name;
+        setText_(badge, group.name, 'name');
         if (group.badgeColor) {
           badge.style.background = group.badgeColor;
         }
@@ -880,7 +1146,7 @@ var TEXT_LINE_HEIGHT_MAP = {
       grid.className = 'iw-detail-sessions-grid';
 
       sessions.forEach(function (session) {
-        grid.appendChild(buildSessionCard_(session));
+        grid.appendChild(withPath_('sessions.' + group.sessions.indexOf(session) + '.', function () { return buildSessionCard_(session); }));
       });
 
       groupWrap.appendChild(grid);
@@ -892,7 +1158,7 @@ var TEXT_LINE_HEIGHT_MAP = {
       // 접힌 상태의 높이 맞추기는 JS로 따로 처리함. 실제 화면에 붙은 뒤에야 높이를
       // 잴 수 있어서 requestAnimationFrame으로 한 박자 늦춰서 실행함.
       requestAnimationFrame(function () { equalizeSessionCardHeads_(grid); });
-    });
+    }
 
     return wrap;
   }
@@ -923,7 +1189,17 @@ var TEXT_LINE_HEIGHT_MAP = {
     var label = document.createElement('span');
     label.className = 'iw-detail-region-detail-label';
     var labelText = row.label || '';
-    appendJustifiedCharacters(label, labelText);
+
+    tagPath_(label, 'label');
+
+    // [4A] 새 형식 라벨에 서식 태그가 있으면 그대로 그리고, 없으면 지금처럼 글자를 벌려 그림
+    if (currentFmt2_ && labelText.indexOf('<') !== -1) {
+      label.innerHTML = sanitizeHtml_(labelText);
+      labelText = IWFormat.plainText(labelText);
+    } else {
+      if (currentFmt2_) labelText = IWFormat.plainText(labelText);
+      appendJustifiedCharacters(label, labelText);
+    }
 
     // 글자가 1개뿐이면 space-between이 왼쪽으로 쏠려 보이므로, 이 경우만 가운데 정렬로 보정
     if (labelText.length <= 1) {
@@ -936,7 +1212,13 @@ var TEXT_LINE_HEIGHT_MAP = {
     // "|"로 구분된 항목("7월 8일(수)" 같은 덩어리)이 중간에서 쪼개져 줄바꿈되지 않도록,
     // 항목 하나하나를 nowrap 처리하고 "|" 자리에서만 줄바꿈이 되도록 함
     var rawContent = row.content || '';
-    var chunks = rawContent.split('|');
+    // [4A] 새 형식은 "|" 를 해석하지 않음 (변환할 때 덩어리 표시로 이미 바뀜)
+    var chunks = currentFmt2_ ? [] : rawContent.split('|');
+
+    if (currentFmt2_) {
+      content.innerHTML = sanitizeHtml_(rawContent);
+    }
+    tagPath_(content, 'content');
 
     for (var c = 0; c < chunks.length; c += 1) {
       var chunkText = chunks[c].trim();
@@ -987,6 +1269,7 @@ var TEXT_LINE_HEIGHT_MAP = {
   }
 
   function createRegionElement(region) {
+    region = region || {};
     var section = document.createElement('div');
     section.className = 'iw-detail-region';
 
@@ -997,13 +1280,14 @@ var TEXT_LINE_HEIGHT_MAP = {
 
     var name = document.createElement('h3');
     name.className = 'iw-detail-region-name';
-    name.textContent = region.name || '';
+    tagBlock_(section);
+    setText_(name, region.name || '', 'name');
     section.appendChild(name);
 
     if (region.subtitle) {
       var subtitle = document.createElement('p');
       subtitle.className = 'iw-detail-region-subtitle';
-      subtitle.textContent = region.subtitle;
+      setText_(subtitle, region.subtitle, 'subtitle');
       section.appendChild(subtitle);
     }
 
@@ -1014,7 +1298,7 @@ var TEXT_LINE_HEIGHT_MAP = {
       detailsWrap.className = 'iw-detail-region-details';
 
       for (var d = 0; d < detailRows.length; d += 1) {
-        detailsWrap.appendChild(createDetailRow(detailRows[d]));
+        detailsWrap.appendChild(withPath_('detailRows.' + d + '.', function () { return createDetailRow(detailRows[d]); }));
       }
 
       section.appendChild(detailsWrap);
@@ -1097,11 +1381,21 @@ var TEXT_LINE_HEIGHT_MAP = {
     if (subtitleLabel && subtitleLabel.trim()) {
       var labelSpan = document.createElement('span');
       labelSpan.className = 'iw-detail-subtitle-label';
-      labelSpan.textContent = subtitleLabel.trim();
+      setText_(labelSpan, subtitleLabel.trim(), 'subtitleLabel');
       subtitleEl.appendChild(labelSpan);
     }
 
-    subtitleEl.appendChild(document.createTextNode(subtitleText.trim()));
+    tagBlock_(subtitleEl, 'subtitle');
+
+    if (isEditMode_()) {
+      var textPart = document.createElement('span');
+      setText_(textPart, subtitleText.trim(), 'subtitleText');
+      subtitleEl.appendChild(textPart);
+    } else if (currentFmt2_) {
+      subtitleEl.insertAdjacentHTML('beforeend', sanitizeHtml_(subtitleText.trim()));
+    } else {
+      subtitleEl.appendChild(document.createTextNode(subtitleText.trim()));
+    }
   }
 
   // ------------------------------------------------------------
@@ -1114,7 +1408,7 @@ var TEXT_LINE_HEIGHT_MAP = {
 
     var label = document.createElement('div');
     label.className = 'iw-detail-info-label';
-    label.textContent = labelText;
+    setText_(label, labelText, 'label');
 
     row.appendChild(label);
     row.appendChild(contentEl);
@@ -1141,12 +1435,12 @@ var TEXT_LINE_HEIGHT_MAP = {
 
       var img = document.createElement('img');
       img.src = validPhotos[p].url;
-      img.alt = validPhotos[p].caption || '';
+      img.alt = currentFmt2_ ? IWFormat.plainText(validPhotos[p].caption) : (validPhotos[p].caption || '');
       photoItem.appendChild(img);
 
       if (validPhotos[p].caption) {
         var caption = document.createElement('figcaption');
-        caption.textContent = validPhotos[p].caption;
+        setText_(caption, validPhotos[p].caption, 'items.' + photos.indexOf(validPhotos[p]) + '.caption');
         photoItem.appendChild(caption);
       }
 
@@ -1162,13 +1456,40 @@ var TEXT_LINE_HEIGHT_MAP = {
       return null;
     }
 
+    // [4A] 새 요소: 글머리 목록(항목마다 서식), 강조 상자
+    if (element.type === 'list') {
+      var listEl = document.createElement('ul');
+      listEl.className = 'iw-detail-info-list iw-detail-info-el-list';
+      (element.items || []).forEach(function (item, index) {
+        if (!item || !IWFormat.plainText(item)) return;
+        var itemEl = document.createElement('li');
+        itemEl.innerHTML = sanitizeHtml_(item);
+        tagPath_(itemEl, 'items.' + index);
+        listEl.appendChild(itemEl);
+      });
+      return listEl.childNodes.length ? listEl : null;
+    }
+
+    if (element.type === 'callout') {
+      if (!element.html || !IWFormat.plainText(element.html)) return null;
+      var calloutEl = document.createElement('div');
+      calloutEl.className = 'iw-detail-info-callout';
+      calloutEl.innerHTML = sanitizeHtml_(element.html);
+      tagPath_(calloutEl, 'html');
+      return calloutEl;
+    }
+
+    if (!element || !element.type) {
+      return null;
+    }
+
     if (element.type === 'subheading') {
       if (!element.text) {
         return null;
       }
       var subEl = document.createElement('h4');
       subEl.className = 'iw-detail-info-subheading';
-      subEl.textContent = element.text;
+      setText_(subEl, element.text, 'text');
       return subEl;
     }
 
@@ -1179,6 +1500,7 @@ var TEXT_LINE_HEIGHT_MAP = {
       var textEl = document.createElement('div');
       textEl.className = 'iw-detail-info-richtext';
       textEl.innerHTML = sanitizeHtml_(element.html);
+      tagPath_(textEl, 'html');
       // [글자 크기 / 줄간격] 블록 전체에 적용되는 값. 값이 없는 예전 데이터는
       // CSS 기본값(font-size:16px, line-height:1.7)이 그대로 적용됨
       textEl.style.fontSize = TEXT_FONT_SIZE_MAP[element.fontSize] || '';
@@ -1226,7 +1548,7 @@ var TEXT_LINE_HEIGHT_MAP = {
     link.href = safeUrl_(element.url);
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
-    link.textContent = element.text;
+    setText_(link, element.text, 'text');
 
     wrap.appendChild(link);
     return wrap;
@@ -1279,7 +1601,7 @@ var TEXT_LINE_HEIGHT_MAP = {
   // 없으면(예전 데이터, 또는 서식 편집을 아직 안 한 셀) 예전 방식(text + "|" 줄바꿈)으로 그림.
   // bg가 있으면 셀 배경색도 같이 입힘.
   function fillTableCellRich_(td, cell) {
-    if (cell.html) {
+    if (cell.html || currentFmt2_) {
       td.innerHTML = sanitizeHtml_(cell.html);
     } else {
       fillTableCell_(td, cell.text);
@@ -1316,7 +1638,12 @@ var TEXT_LINE_HEIGHT_MAP = {
 
       for (var h = 0; h < headers.length; h += 1) {
         var th = document.createElement('th');
-        fillTableCell_(th, headers[h]);
+        tagPath_(th, 'headers.' + h);
+        if (currentFmt2_) {
+          th.innerHTML = sanitizeHtml_(headers[h]);
+        } else {
+          fillTableCell_(th, headers[h]);
+        }
         headRow.appendChild(th);
       }
 
@@ -1338,6 +1665,7 @@ var TEXT_LINE_HEIGHT_MAP = {
 
         var td = document.createElement('td');
         fillTableCellRich_(td, cell);
+        tagPath_(td, 'rows.' + r + '.' + c + '.html');
 
         if (cell.rowspan > 1) {
           td.rowSpan = cell.rowspan;
@@ -1388,6 +1716,7 @@ var TEXT_LINE_HEIGHT_MAP = {
       var stepContent = document.createElement('div');
       stepContent.className = 'iw-detail-info-diagram-step-content';
       stepContent.innerHTML = sanitizeHtml_(steps[i].html);
+      tagPath_(stepContent, 'steps.' + element.steps.indexOf(steps[i]) + '.html');
 
       stepEl.appendChild(stepContent);
       wrap.appendChild(stepEl);
@@ -1411,7 +1740,7 @@ var TEXT_LINE_HEIGHT_MAP = {
 
       for (var h = 0; h < items.length; h += 1) {
         var li = document.createElement('li');
-        li.textContent = items[h];
+        setText_(li, items[h], 'items.' + h);
         list.appendChild(li);
       }
 
@@ -1439,12 +1768,12 @@ var TEXT_LINE_HEIGHT_MAP = {
 
         var name = document.createElement('span');
         name.className = 'iw-detail-info-contact-name';
-        name.textContent = contact.name || '';
+        setText_(name, contact.name || '', 'items.' + c + '.name');
         if (contact.color) name.style.color = contact.color; // 없으면 CSS 기본색(--text-strong)
 
         var phone = document.createElement('span');
         phone.className = 'iw-detail-info-contact-phone';
-        phone.textContent = contact.phone || '';
+        setText_(phone, contact.phone || '', 'items.' + c + '.phone');
 
         contactMain.appendChild(name);
         contactMain.appendChild(phone);
@@ -1454,7 +1783,7 @@ var TEXT_LINE_HEIGHT_MAP = {
         if (contact.address) {
           var address = document.createElement('span');
           address.className = 'iw-detail-info-contact-address';
-          address.textContent = contact.address;
+          setText_(address, contact.address, 'items.' + c + '.address');
           contactRow.appendChild(address);
         }
 
@@ -1499,7 +1828,11 @@ var TEXT_LINE_HEIGHT_MAP = {
       var previousType = null;
 
       for (var ei = 0; ei < elements.length; ei += 1) {
-        var elementEl = buildCustomElementNode(elements[ei]);
+        var elementEl = withPath_('elements.' + ei + '.', function () {
+          var node = buildCustomElementNode(elements[ei]);
+          tagBlock_(node);
+          return node;
+        });
 
         if (elementEl) {
           if (hasContent) {
@@ -1519,15 +1852,18 @@ var TEXT_LINE_HEIGHT_MAP = {
 
       if (!hasContent) {
         // 예전 버전 호환: elements 배열이 생기기 전(lines/photos/html/value)에 저장된 데이터
-        var lines = (block.lines || []).filter(function (l) { return l && l.trim(); });
+        var allLines = block.lines || [];
+        var lines = allLines.filter(function (l) { return l && l.trim(); });
 
         if (lines.length > 0) {
           var richList = document.createElement('ul');
           richList.className = 'iw-detail-info-list iw-detail-info-richtext';
 
-          for (var rl = 0; rl < lines.length; rl += 1) {
+          for (var rl = 0; rl < allLines.length; rl += 1) {
+            if (!allLines[rl] || !allLines[rl].trim()) continue;
             var li2 = document.createElement('li');
-            li2.innerHTML = sanitizeHtml_(lines[rl]);
+            li2.innerHTML = sanitizeHtml_(allLines[rl]);
+            tagPath_(li2, 'lines.' + rl);
             richList.appendChild(li2);
           }
 
@@ -1537,6 +1873,7 @@ var TEXT_LINE_HEIGHT_MAP = {
           var richWrap = document.createElement('div');
           richWrap.className = 'iw-detail-info-richtext';
           richWrap.innerHTML = sanitizeHtml_(block.html);
+          tagPath_(richWrap, 'html');
           wrap.appendChild(richWrap);
           hasContent = true;
         }
@@ -1555,7 +1892,7 @@ var TEXT_LINE_HEIGHT_MAP = {
         if (!hasContent && block.value) {
           var legacyValue = document.createElement('div');
           legacyValue.className = 'iw-detail-info-value';
-          legacyValue.textContent = block.value;
+          setText_(legacyValue, block.value, 'value');
           wrap.appendChild(legacyValue);
           hasContent = true;
         }
@@ -1573,7 +1910,7 @@ var TEXT_LINE_HEIGHT_MAP = {
       var hasButton = false;
 
       for (var bi = 0; bi < buttonItems.length; bi += 1) {
-        var buttonNode = buildButtonElement(buttonItems[bi]);
+        var buttonNode = withPath_('items.' + bi + '.', function () { return buildButtonElement(buttonItems[bi]); });
 
         if (buttonNode) {
           buttonsWrap.appendChild(buttonNode);
@@ -1590,21 +1927,45 @@ var TEXT_LINE_HEIGHT_MAP = {
     }
     var value = document.createElement('div');
     value.className = 'iw-detail-info-value';
-    value.textContent = block.value;
+    setText_(value, block.value, 'value');
 
     return value;
   }
 
   // info.blocks 배열 전체를 순서대로 렌더링 (구분선 + 라벨 + 내용을 블록마다 반복)
-  function createInfoSection(info) {
+  // keys: 그릴 큰 블록 경로 목록. 없으면 정보 블록 전부(지금 방식).
+  // 지역 블록이 섞여 있으면(블록 순서 지정) 지역도 정보 블록과 같은 구분선을 앞에 두고 이 자리에 그림
+  function createInfoSection(info, keys, regions) {
     var wrap = document.createDocumentFragment();
     var blocks = info.blocks || [];
 
-    for (var b = 0; b < blocks.length; b += 1) {
-      var block = blocks[b];
-      var contentEl = createBlockContentElement(block);
+    if (!keys) {
+      keys = blocks.map(function (x, index) { return 'info.blocks.' + index; });
+    }
 
-      if (!contentEl) {
+    for (var k = 0; k < keys.length; k += 1) {
+      var regionMatch = keys[k].match(/^regions\.(\d+)$/);
+      if (regionMatch) {
+        var regionIndex = Number(regionMatch[1]);
+        var regionRule = document.createElement('div');
+        regionRule.className = 'iw-detail-info-rule';
+        wrap.appendChild(regionRule);
+        wrap.appendChild(withPath_(keys[k] + '.', function () { return createRegionElement(regions[regionIndex]); }));
+        continue;
+      }
+
+      var b = Number(keys[k].split('.')[2]);
+      var block = blocks[b];
+      if (!block) continue;
+      var infoRow = withPath_('info.blocks.' + b + '.', function () {
+        var contentEl = createBlockContentElement(block);
+        if (!contentEl) return null;
+        var row = createInfoRow(block.label || '', contentEl);
+        tagBlock_(row);
+        return row;
+      });
+
+      if (!infoRow) {
         continue;
       }
 
@@ -1612,7 +1973,7 @@ var TEXT_LINE_HEIGHT_MAP = {
       rule.className = 'iw-detail-info-rule';
       wrap.appendChild(rule);
 
-      wrap.appendChild(createInfoRow(block.label || '', contentEl));
+      wrap.appendChild(infoRow);
     }
 
     return wrap;
@@ -1623,6 +1984,13 @@ var TEXT_LINE_HEIGHT_MAP = {
   // ------------------------------------------------------------
 
   function renderProgram(root, program, data) {
+    currentFmt2_ = !!(data && data.fmt === IWFormat.FMT_VERSION);
+
+    // [4A] 글자 크기 단계(iw-fs-small~xlarge)가 쓰는 값. 레이아웃 설정 단계값을 그대로 씀
+    Object.keys(TEXT_FONT_SIZE_MAP).forEach(function (step) {
+      root.style.setProperty('--iw-fs-' + step, TEXT_FONT_SIZE_MAP[step]);
+    });
+
     // [1단계 통합] 메뉴별 카테고리 색표 선택. 관리 화면 미리보기처럼 메뉴를 모르면 카테고리 이름으로 추정
     var menu = program.menu || inferMenuFromCategory_(program.category);
     var styleMap = menu === 'edu' ? EDU_CATEGORY_STYLE_MAP : CATEGORY_STYLE_MAP;
@@ -1652,11 +2020,20 @@ var TEXT_LINE_HEIGHT_MAP = {
       photo.textContent = '프로그램 사진을 여기에 넣으세요';
     }
 
+    tagBlock_(photo, 'photo');
+
     var badge = root.querySelector('.iw-detail-badge');
     badge.textContent = program.category || '';
+    tagBlock_(badge, 'category');
 
     var title = root.querySelector('.iw-detail-title');
-    title.textContent = program.title || '';
+    if (currentFmt2_ && typeof data.titleHtml === 'string' && IWFormat.plainText(data.titleHtml)) {
+      title.innerHTML = sanitizeHtml_(data.titleHtml);
+    } else {
+      title.textContent = program.title || '';
+    }
+    tagBlock_(title, 'title');
+    tagPath_(title, 'titleHtml');
 
     // [한 줄 소개] dataJson 최상단에 저장된 subtitleLabel/subtitleText를 반영
     renderSubtitle(root, data && data.subtitleLabel, data && data.subtitleText);
@@ -1666,23 +2043,39 @@ var TEXT_LINE_HEIGHT_MAP = {
 
     var regions = (data && data.regions) || [];
 
-    for (var i = 0; i < regions.length; i += 1) {
-      regionsWrap.appendChild(createRegionElement(regions[i]));
-    }
-
-    // [라벨 폭 통일] 실제 문서에 삽입되어 레이아웃이 잡힌 뒤에 폭을 재야 정확해서,
-    // appendChild가 다 끝난 이 시점에 지역별로 한 번씩 실행함 (지역 간에는 서로 영향 없음)
-    var insertedRegionEls = regionsWrap.querySelectorAll('.iw-detail-region');
-
-    for (var ri = 0; ri < insertedRegionEls.length; ri += 1) {
-      equalizeRegionLabels(insertedRegionEls[ri]);
-    }
-
     var infoWrap = root.querySelector('.iw-detail-info');
     infoWrap.innerHTML = '';
 
-    if (data && data.info) {
-      infoWrap.appendChild(createInfoSection(data.info));
+    // [4A] 블록 순서(order)가 지정돼 지금 순서와 다르면, 지역도 정보 블록 사이 자리에 섞어 그림
+    var order = IWFormat.normalizeOrder(data || {});
+    var defaultOrder = IWFormat.normalizeOrder({ regions: data && data.regions, info: data && data.info });
+    var mixedOrder = !!(data && Array.isArray(data.order)) && order.join(',') !== defaultOrder.join(',');
+
+    // [라벨 폭 통일] 실제 문서에 삽입되어 레이아웃이 잡힌 뒤에 폭을 재야 정확해서,
+    // 지역을 다 넣은 시점에 지역별로 한 번씩 실행함 (지역 간에는 서로 영향 없음).
+    // 지금 순서에서는 정보 블록을 넣기 전에 실행해야 함 — 순서가 바뀌면 크롬이 표 가로 스크롤바를
+    // 다시 계산하지 않아 높이가 15px 달라지는 일이 있었음(4A 비교 시험에서 발견)
+    function equalizeAllRegionLabels() {
+      var insertedRegionEls = root.querySelectorAll('.iw-detail-region');
+
+      for (var ri = 0; ri < insertedRegionEls.length; ri += 1) {
+        equalizeRegionLabels(insertedRegionEls[ri]);
+      }
+    }
+
+    if (mixedOrder) {
+      infoWrap.appendChild(createInfoSection((data && data.info) || {}, order, regions));
+      equalizeAllRegionLabels();
+    } else {
+      for (var i = 0; i < regions.length; i += 1) {
+        regionsWrap.appendChild(withPath_('regions.' + i + '.', function () { return createRegionElement(regions[i]); }));
+      }
+
+      equalizeAllRegionLabels();
+
+      if (data && data.info) {
+        infoWrap.appendChild(createInfoSection(data.info));
+      }
     }
   }
 
@@ -1702,6 +2095,79 @@ var TEXT_LINE_HEIGHT_MAP = {
     console.warn('[상세페이지] 프로그램을 표시하지 못했습니다. 페이지 주소 끝에 ?iwdebug=1 을 붙여 다시 열면 원인이 콘솔에 나옵니다.');
   }
 
+  // [4A] 시트의 설정 CSV를 읽어 색표·글자 단계를 덮어씀. 실패·지연돼도 절대 멈추지 않음(항상 resolve)
+  function loadSheetSettings_() {
+    var jobs = [];
+
+    function fetchCsv(url) {
+      var bust = url + (url.indexOf('?') === -1 ? '?' : '&') + 'cachebust=' + Date.now();
+      return fetch(bust, { cache: 'no-store' }).then(function (response) {
+        if (!response.ok) throw new Error('status ' + response.status);
+        return response.text();
+      }).then(parseCsv);
+    }
+
+    if (CATEGORIES_CSV_URL) {
+      jobs.push(fetchCsv(CATEGORIES_CSV_URL).then(applyCategoryRows_).catch(function (err) {
+        debugConsole.warn('[진단] 카테고리 색 CSV 실패 → 파일 안 색표 사용:', err);
+      }));
+    }
+
+    if (LAYOUT_CSV_URL) {
+      jobs.push(fetchCsv(LAYOUT_CSV_URL).then(applyLayoutRows_).catch(function (err) {
+        debugConsole.warn('[진단] 글자 단계 CSV 실패 → 파일 안 값 사용:', err);
+      }));
+    }
+
+    if (jobs.length === 0) {
+      return Promise.resolve();
+    }
+
+    return Promise.race([
+      Promise.all(jobs),
+      new Promise(function (resolve) { setTimeout(resolve, SETTINGS_WAIT_MS); })
+    ]);
+  }
+
+  function rowsToObjects_(rows) {
+    var header = (rows[0] || []).map(function (h) { return String(h || '').trim(); });
+    return rows.slice(1).map(function (row) {
+      var obj = {};
+      header.forEach(function (h, i) { obj[h] = String(row[i] == null ? '' : row[i]).trim(); });
+      return obj;
+    });
+  }
+
+  // categories 탭: menu,name,bg,accent,text,locked → 메뉴별 색표에 덮어씀 (없는 이름은 파일 안 값 유지)
+  function applyCategoryRows_(rows) {
+    rowsToObjects_(rows).forEach(function (row) {
+      var isColor = /^#[0-9a-f]{3,8}$/i;
+      if (!row.name || !isColor.test(row.bg) || !isColor.test(row.accent) || (row.text && !isColor.test(row.text))) {
+        if (row.name) debugConsole.warn('[진단] 카테고리 색 형식이 아님 → 파일 안 값 유지:', row);
+        return;
+      }
+      var map = row.menu === 'edu' ? EDU_CATEGORY_STYLE_MAP : row.menu === 'community' ? CATEGORY_STYLE_MAP : null;
+      if (!map) return;
+      var style = { bg: row.bg, line: row.accent };
+      if (row.text) style.text = row.text;
+      map[row.name] = style;
+    });
+  }
+
+  // layout_settings 탭: key,value(JSON) — fontSize·lineHeight 단계값
+  function applyLayoutRows_(rows) {
+    rowsToObjects_(rows).forEach(function (row) {
+      var target = row.key === 'fontSize' ? TEXT_FONT_SIZE_MAP : row.key === 'lineHeight' ? TEXT_LINE_HEIGHT_MAP : null;
+      if (!target) return;
+      try {
+        var values = JSON.parse(row.value);
+        Object.keys(values).forEach(function (k) { if (values[k]) target[k] = values[k]; });
+      } catch (err) {
+        debugConsole.warn('[진단] 레이아웃 설정 값이 깨짐:', row.key, err);
+      }
+    });
+  }
+
   function loadProgram() {
     debugConsole.log('%c[진단] loadProgram() 시작', 'color:#4caf50;font-weight:bold;');
     debugConsole.log('[진단] window.PROGRAM_ID:', JSON.stringify(window.PROGRAM_ID));
@@ -1714,6 +2180,9 @@ var TEXT_LINE_HEIGHT_MAP = {
       debugConsole.error('[진단] .iw-detail-card 요소를 DOM에서 찾지 못함 → 여기서 중단. 코드위젯 HTML이 페이지에 실제로 삽입됐는지 확인 필요.');
       return;
     }
+
+    // [4A] 카드가 있을 때만 설정 CSV를 요청 (관리웹앱이 IWFormat만 쓰려고 불러올 때는 요청 안 함)
+    var settingsReady = loadSheetSettings_();
 
     // [핵심 수정] window.PROGRAM_ID는 별도 <script> 태그가 실행돼야 값이 채워지는데,
     // 아임웹 코드위젯 환경에서는 인라인 스크립트와 외부 스크립트(src)의 실행 순서가
@@ -1748,7 +2217,7 @@ var TEXT_LINE_HEIGHT_MAP = {
         category: previewPayload.category || '',
         imageurl: previewPayload.imageUrl || ''
       };
-      renderProgram(root, previewProgram, previewPayload);
+      settingsReady.then(function () { renderProgram(root, previewProgram, previewPayload); });
       return;
     }
 
@@ -1800,7 +2269,7 @@ var TEXT_LINE_HEIGHT_MAP = {
           if (program.menu !== 'edu' && program.menu !== 'community') {
             program.menu = menu === 'edu' || menu === 'community' ? menu : '';
           }
-          showProgram_(root, program);
+          settingsReady.then(function () { showProgram_(root, program); });
         })
         .catch(function (err) {
           debugConsole.error('[진단] ' + menu + ' 시트 불러오기 실패:', err);
