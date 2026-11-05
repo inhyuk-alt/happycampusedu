@@ -453,6 +453,25 @@ var TEXT_LINE_HEIGHT_MAP = {
       copy.fmt = IWFormat.FMT_VERSION;
       copy.titleHtml = esc((program && program.title) || '');
       return { data: copy, review: review };
+    },
+
+    // [4C-1] 배경 테마: 관리웹앱이 저장 때 계산해 둔 최종 색(theme.resolved)을 CSS 변수로. 색 형식이 아닌 값은 버림
+    themeVars: function (theme) {
+      var out = {};
+      var resolved = theme && theme.resolved;
+      if (!resolved || typeof resolved !== 'object') return out;
+      var isColor = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
+      var MAP = {
+        bg: ['--detail-bg'], accent: ['--accent'], accentText: ['--accent-text'], onAccent: ['--on-accent'], tableHead: ['--table-head-text'],
+        ink: ['--ink'], muted: ['--muted'], surface: ['--surface'],
+        text: ['--text-strong', '--text', '--text-body', '--text-sub', '--text-soft']
+      };
+      Object.keys(MAP).forEach(function (key) {
+        var v = resolved[key];
+        if (typeof v !== 'string' || !isColor.test(v.trim())) return;
+        MAP[key].forEach(function (name) { out[name] = v.trim(); });
+      });
+      return out;
     }
   };
 
@@ -488,6 +507,14 @@ var TEXT_LINE_HEIGHT_MAP = {
     } finally {
       pathStack_.pop();
     }
+  }
+
+  // [4B] 편집 화면에서만: 내용이 빈 블록도 자리를 보여줌 (방문자 화면은 지금처럼 숨김)
+  function editEmpty_() {
+    var box = document.createElement('div');
+    box.className = 'iw-edit-empty';
+    box.textContent = '비어 있음 — 오른쪽 블록 설정에서 내용을 넣으세요';
+    return box;
   }
 
   function tagPath_(el, key) {
@@ -1360,8 +1387,9 @@ var TEXT_LINE_HEIGHT_MAP = {
   // 둘 다 비어 있으면 요소 자체를 숨김 (기존 페이지 레이아웃과 동일하게 유지됨)
   function renderSubtitle(root, subtitleLabel, subtitleText) {
     var hasContent = !!(subtitleText && subtitleText.trim());
+    subtitleText = subtitleText || '';
 
-    if (!hasContent) {
+    if (!hasContent && !isEditMode_()) {
       var existing = root.querySelector('.iw-detail-subtitle');
       if (existing) {
         existing.style.display = 'none';
@@ -1378,10 +1406,10 @@ var TEXT_LINE_HEIGHT_MAP = {
     subtitleEl.innerHTML = '';
     subtitleEl.style.display = '';
 
-    if (subtitleLabel && subtitleLabel.trim()) {
+    if ((subtitleLabel && subtitleLabel.trim()) || isEditMode_()) {
       var labelSpan = document.createElement('span');
       labelSpan.className = 'iw-detail-subtitle-label';
-      setText_(labelSpan, subtitleLabel.trim(), 'subtitleLabel');
+      setText_(labelSpan, (subtitleLabel || '').trim(), 'subtitleLabel');
       subtitleEl.appendChild(labelSpan);
     }
 
@@ -1461,7 +1489,7 @@ var TEXT_LINE_HEIGHT_MAP = {
       var listEl = document.createElement('ul');
       listEl.className = 'iw-detail-info-list iw-detail-info-el-list';
       (element.items || []).forEach(function (item, index) {
-        if (!item || !IWFormat.plainText(item)) return;
+        if ((!item || !IWFormat.plainText(item)) && !isEditMode_()) return;
         var itemEl = document.createElement('li');
         itemEl.innerHTML = sanitizeHtml_(item);
         tagPath_(itemEl, 'items.' + index);
@@ -1471,7 +1499,7 @@ var TEXT_LINE_HEIGHT_MAP = {
     }
 
     if (element.type === 'callout') {
-      if (!element.html || !IWFormat.plainText(element.html)) return null;
+      if ((!element.html || !IWFormat.plainText(element.html)) && !isEditMode_()) return null;
       var calloutEl = document.createElement('div');
       calloutEl.className = 'iw-detail-info-callout';
       calloutEl.innerHTML = sanitizeHtml_(element.html);
@@ -1484,7 +1512,7 @@ var TEXT_LINE_HEIGHT_MAP = {
     }
 
     if (element.type === 'subheading') {
-      if (!element.text) {
+      if (!element.text && !isEditMode_()) {
         return null;
       }
       var subEl = document.createElement('h4');
@@ -1494,7 +1522,7 @@ var TEXT_LINE_HEIGHT_MAP = {
     }
 
     if (element.type === 'text') {
-      if (!element.html) {
+      if (!element.html && !isEditMode_()) {
         return null;
       }
       var textEl = document.createElement('div');
@@ -1829,7 +1857,7 @@ var TEXT_LINE_HEIGHT_MAP = {
 
       for (var ei = 0; ei < elements.length; ei += 1) {
         var elementEl = withPath_('elements.' + ei + '.', function () {
-          var node = buildCustomElementNode(elements[ei]);
+          var node = buildCustomElementNode(elements[ei]) || (isEditMode_() && elements[ei] ? editEmpty_() : null);
           tagBlock_(node);
           return node;
         });
@@ -1922,7 +1950,7 @@ var TEXT_LINE_HEIGHT_MAP = {
     }
 
     // recruit: 단순 텍스트 한 줄
-    if (!block.value) {
+    if (!block.value && !isEditMode_()) {
       return null;
     }
     var value = document.createElement('div');
@@ -1959,7 +1987,10 @@ var TEXT_LINE_HEIGHT_MAP = {
       if (!block) continue;
       var infoRow = withPath_('info.blocks.' + b + '.', function () {
         var contentEl = createBlockContentElement(block);
-        if (!contentEl) return null;
+        if (!contentEl) {
+          if (!isEditMode_()) return null;
+          contentEl = editEmpty_();
+        }
         var row = createInfoRow(block.label || '', contentEl);
         tagBlock_(row);
         return row;
@@ -2003,6 +2034,9 @@ var TEXT_LINE_HEIGHT_MAP = {
     // [텍스트 전용색] 순수 글자색으로 쓰이는 4곳(한줄소개 라벨/지역명/블록 라벨/소제목)에서만 사용.
     // text가 따로 없으면 line과 동일한 값을 써서 기존과 똑같이 보임
     root.style.setProperty('--accent-text', categoryStyle.text || categoryStyle.line);
+    // [4C-1] 사람이 고른 배경 테마가 있으면 카테고리 색 위에 덮어씀 (없으면 지금과 같음)
+    var themeVars = IWFormat.themeVars(data && data.theme);
+    Object.keys(themeVars).forEach(function (name) { root.style.setProperty(name, themeVars[name]); });
     root.setAttribute('data-status', 'ready');
 
     var photo = root.querySelector('.iw-detail-photo');
@@ -2098,6 +2132,13 @@ var TEXT_LINE_HEIGHT_MAP = {
   // [4A] 시트의 설정 CSV를 읽어 색표·글자 단계를 덮어씀. 실패·지연돼도 절대 멈추지 않음(항상 resolve)
   function loadSheetSettings_() {
     var jobs = [];
+
+    // [4B] 관리웹앱 편집 화면은 이미 읽어 둔 설정을 넘겨줌 (시트를 다시 읽지 않아 바로 그려짐)
+    if (window.__IW_SETTINGS__) {
+      if (window.__IW_SETTINGS__.categories) applyCategoryRows_(window.__IW_SETTINGS__.categories);
+      if (window.__IW_SETTINGS__.layout) applyLayoutRows_(window.__IW_SETTINGS__.layout);
+      return Promise.resolve();
+    }
 
     function fetchCsv(url) {
       var bust = url + (url.indexOf('?') === -1 ? '?' : '&') + 'cachebust=' + Date.now();
@@ -2215,7 +2256,8 @@ var TEXT_LINE_HEIGHT_MAP = {
       var previewProgram = {
         title: previewPayload.title || '',
         category: previewPayload.category || '',
-        imageurl: previewPayload.imageUrl || ''
+        imageurl: previewPayload.imageUrl || '',
+        menu: previewPayload.menu || ''
       };
       settingsReady.then(function () { renderProgram(root, previewProgram, previewPayload); });
       return;
