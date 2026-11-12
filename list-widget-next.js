@@ -9,10 +9,13 @@
      + 이 파일과 list-widget-next.css 불러오기
 ================================================================== */
 (function () {
-  // [4C-2] 통합 시트 게시 주소 (list_edu / list_community / list_settings 탭). gid는 탭을 게시한 뒤 채움.
+  // [4C-2] 통합 시트 게시 주소 (list_edu / list_community / list_settings 탭, 2026-11-12 게시)
   // 시험·미리보기는 window.IW_LIST_SOURCES = {edu, community, settings} 또는 window.__IW_LIST_PREVIEW__로 바꿔 넣음
-  var LIST_CSV_URLS = { edu: '', community: '' };
-  var LIST_SETTINGS_CSV_URL = '';
+  var LIST_CSV_URLS = {
+    edu: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTAuSW0TCzXc6K6iojr8m5EDJbRFvdO9Z1r-uO1AijDvtLVITVWwOY1v-HJrUPUx9ehGqpo9s0zYoZn/pub?gid=1709488579&single=true&output=csv',
+    community: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTAuSW0TCzXc6K6iojr8m5EDJbRFvdO9Z1r-uO1AijDvtLVITVWwOY1v-HJrUPUx9ehGqpo9s0zYoZn/pub?gid=1903647603&single=true&output=csv'
+  };
+  var LIST_SETTINGS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTAuSW0TCzXc6K6iojr8m5EDJbRFvdO9Z1r-uO1AijDvtLVITVWwOY1v-HJrUPUx9ehGqpo9s0zYoZn/pub?gid=229770221&single=true&output=csv';
 
   // [4C-2] 메뉴별 기본값 = 지금 아임웹 코드 안 값 그대로 (교육 / 커뮤니티). list_settings 탭이 키별로 덮어씀
   var LIST_DEFAULTS = {
