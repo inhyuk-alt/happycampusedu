@@ -1,0 +1,393 @@
+/* ==================================================================
+   list-widget-next.css [4C-2] — 카드목록 위젯 (교육·커뮤니티 공통)
+   지금 아임웹 코드위젯 안 CSS를 그대로 옮김 (커뮤니티의 '데스크톱 3열 고정' 규칙 포함).
+================================================================== */
+:where(*, *::before, *::after) {
+  box-sizing: border-box;
+}
+
+.iw-post-grid {
+  --card-width: 290px;
+  --card-gap: 28px;
+  --thumb-radius: 0;
+  --thumb-ratio: 3 / 4;
+
+  --filter-color: #17bcb4;
+  --filter-top-space: 0px;
+  --filter-bottom-space: 34px;
+  --filter-side-space: 0px;
+
+  width: 100%;
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    "Apple SD Gothic Neo",
+    sans-serif;
+}
+
+.iw-post-grid[data-card-size="compact"] { --card-width: 240px; }
+.iw-post-grid[data-card-size="normal"] { --card-width: 290px; }
+.iw-post-grid[data-card-size="large"] { --card-width: 340px; }
+
+.iw-post-grid[data-gap="compact"] { --card-gap: 16px; }
+.iw-post-grid[data-gap="normal"] { --card-gap: 28px; }
+.iw-post-grid[data-gap="wide"] { --card-gap: 42px; }
+
+.iw-post-grid[data-round="none"] { --thumb-radius: 0; }
+.iw-post-grid[data-round="soft"] { --thumb-radius: 8px; }
+.iw-post-grid[data-round="round"] { --thumb-radius: 18px; }
+
+.iw-post-grid[data-ratio="square"] { --thumb-ratio: 1 / 1; }
+.iw-post-grid[data-ratio="landscape"] { --thumb-ratio: 4 / 3; }
+.iw-post-grid[data-ratio="wide"] { --thumb-ratio: 16 / 9; }
+.iw-post-grid[data-ratio="portrait"] { --thumb-ratio: 3 / 4; }
+
+/* 필터 (번호 + 밑줄 탭 스타일) */
+
+.iw-post-grid .iw-post-filter-wrap {
+  display: flex;
+  width: 100%;
+  border-top: 1px solid #e5e5e5;
+  border-bottom: 1px solid #e5e5e5;
+  margin: var(--filter-top-space) var(--filter-side-space) var(--filter-bottom-space);
+}
+
+.iw-post-grid[data-filter-align="left"] .iw-post-filter-wrap { justify-content: flex-start; }
+.iw-post-grid[data-filter-align="center"] .iw-post-filter-wrap { justify-content: center; }
+.iw-post-grid[data-filter-align="right"] .iw-post-filter-wrap { justify-content: flex-end; }
+
+.iw-post-grid .iw-post-filter-inner,
+.iw-post-grid .iw-post-filter-dynamic {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 44px;
+}
+
+.iw-post-grid .iw-post-filter-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 18px 0 15px;
+  border: none;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: #222222;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.18s ease, color 0.18s ease, transform 0.12s ease;
+}
+
+.iw-post-grid .iw-post-filter-number {
+  color: var(--tab-color, #999999);
+  font-size: 14px;
+  font-weight: 700;
+  transition: color 0.18s ease;
+}
+
+.iw-post-grid .iw-post-filter-chip[data-state="active"] {
+  border-bottom-color: var(--tab-color, #17bcb4);
+}
+
+.iw-post-grid .iw-post-filter-chip:hover {
+  color: var(--tab-color, #17bcb4);
+}
+
+.iw-post-grid .iw-post-filter-chip:active {
+  transform: scale(0.94);
+}
+
+@media (hover: none) {
+  .iw-post-grid .iw-post-filter-chip:hover {
+    color: #222222;
+  }
+
+  .iw-post-grid .iw-post-filter-chip[data-state="active"]:hover {
+    color: var(--tab-color, #17bcb4);
+  }
+}
+
+/* 카드 목록 */
+
+.iw-post-grid .iw-post-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--card-width)), var(--card-width)));
+  justify-content: start;
+  gap: var(--card-gap);
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* [고정 3열] 카드 개수가 적어서 --card-width 기반 자동 채우기 대신, 데스크톱에서
+   항상 정확히 3칸으로만 나누고 싶을 때 <section data-columns="3" ...> 로 켜는 옵션.
+   화면 폭에 상관없이 항상 3등분되므로 --card-width 값은 이때 무시되고, 썸네일은
+   자동으로 더 커짐. 990px 이하에서는 기존 2열/1열 반응형 규칙이 그대로 적용됨
+   (아래쪽 미디어쿼리가 더 좁은 화면에서 이 규칙을 덮어씀). */
+@media (min-width: 991px) {
+  .iw-post-grid[data-columns="3"] .iw-post-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.iw-post-grid[data-card-align="center"] .iw-post-list { justify-content: center; }
+
+.iw-post-grid .iw-post-status {
+  grid-column: 1 / -1;
+  padding: 40px 0;
+  color: #888888;
+  font-size: 14px;
+  text-align: center;
+}
+
+/* 마감 카드 구분선 — 텍스트 색/선 색은 아래 hex만 수정하면 됨 */
+.iw-post-grid .iw-post-divider {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0 4px;
+  color: #999999;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.iw-post-grid .iw-post-divider::before,
+.iw-post-grid .iw-post-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #d9d9d9;
+}
+
+.iw-post-grid .iw-post-card[data-visible="false"],
+.iw-post-grid .iw-post-card[data-filter-state="hide"] {
+  display: none;
+}
+
+.iw-post-grid .iw-post-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  padding: 14px 14px 16px;
+  border-radius: 16px;
+  background: transparent;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.iw-post-grid .iw-post-link:hover,
+.iw-post-grid .iw-post-link:focus-visible {
+  transform: translateY(-6px);
+  background-color: #ffffff;
+  box-shadow: 0 18px 34px rgba(20, 20, 20, 0.14);
+}
+
+.iw-post-grid .iw-post-link:active {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 18px rgba(20, 20, 20, 0.12);
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+
+@media (hover: none) {
+  .iw-post-grid .iw-post-link:hover {
+    transform: none;
+    background-color: transparent;
+    box-shadow: none;
+  }
+
+  .iw-post-grid .iw-post-link:active {
+    transform: scale(0.98);
+    box-shadow: none;
+  }
+}
+
+/* 썸네일 */
+
+.iw-post-grid .iw-post-thumb {
+  position: relative;
+  width: 100%;
+  aspect-ratio: var(--thumb-ratio);
+  overflow: hidden;
+  border: 1px solid #e8e8e8;
+  border-radius: var(--thumb-radius);
+  background: #f3f3f3;
+}
+
+.iw-post-grid .iw-post-placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #9b9b9b;
+  font-size: 13px;
+}
+
+.iw-post-grid .iw-post-closed-ribbon {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 3;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #333333;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.iw-post-grid .iw-post-closed-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.iw-post-grid .iw-post-closed-overlay span {
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.iw-post-grid .iw-post-link:hover .iw-post-closed-overlay,
+.iw-post-grid .iw-post-card[data-flip="true"] .iw-post-closed-overlay {
+  opacity: 1;
+}
+
+.iw-post-grid .iw-post-image {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-position: center;
+  transition: opacity 0.35s ease;
+}
+
+.iw-post-grid[data-fit="cover"] .iw-post-image { object-fit: cover; }
+.iw-post-grid[data-fit="contain"] .iw-post-image { object-fit: contain; }
+
+.iw-post-grid .iw-post-image--hover {
+  opacity: 0;
+  z-index: 2;
+}
+
+.iw-post-grid .iw-post-link:hover .iw-post-image--hover {
+  opacity: 1;
+}
+
+.iw-post-grid .iw-post-card[data-flip="true"] .iw-post-image--hover {
+  opacity: 1;
+}
+
+/* 카테고리 딱지 */
+
+.iw-post-grid .iw-post-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 26px;
+  margin-top: 12px;
+}
+
+.iw-post-grid .iw-post-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 4px 10px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.iw-post-grid .iw-post-badge:empty { display: none; }
+
+.iw-post-grid .iw-post-badge[data-badge-style="pill"] {
+  padding-right: 12px;
+  padding-left: 12px;
+  border-radius: 999px;
+}
+
+/* 텍스트 */
+
+.iw-post-grid .iw-post-title {
+  display: -webkit-box;
+  margin: 9px 0 0;
+  overflow: hidden;
+  color: #222222;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.42;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.iw-post-grid .iw-post-title[data-size="small"] { font-size: 15px; }
+.iw-post-grid .iw-post-title[data-size="large"] { font-size: 20px; }
+
+.iw-post-grid .iw-post-subtitle,
+.iw-post-grid .iw-post-description,
+.iw-post-grid .iw-post-date {
+  color: #555555;
+  line-height: 1.55;
+}
+
+.iw-post-grid .iw-post-subtitle { margin: 6px 0 0; font-size: 15px; }
+.iw-post-grid .iw-post-description { margin: 5px 0 0; font-size: 14px; }
+.iw-post-grid .iw-post-date { margin: 10px 0 0; font-size: 13px; }
+
+@media (max-width: 990px) {
+  .iw-post-grid .iw-post-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .iw-post-grid .iw-post-filter-wrap {
+    justify-content: flex-start;
+    overflow-x: auto;
+  }
+
+  .iw-post-grid .iw-post-filter-inner,
+  .iw-post-grid .iw-post-filter-dynamic {
+    flex-wrap: nowrap;
+    gap: 26px;
+  }
+
+  .iw-post-grid .iw-post-filter-chip {
+    padding: 14px 0 12px;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+
+  .iw-post-grid .iw-post-filter-number {
+    font-size: 13px;
+  }
+
+  .iw-post-grid .iw-post-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* [4C-2] 전체 보이기 + 흐린 배경: 같은 사진을 흐리게 깔고 그 위에 사진 전체 */
+.iw-post-grid .iw-post-thumb-fill {
+  position: absolute;
+  inset: -16px;
+  background-size: cover;
+  background-position: center;
+  filter: blur(14px);
+  opacity: 0.9;
+}
