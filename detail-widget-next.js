@@ -485,6 +485,84 @@ var TEXT_LINE_HEIGHT_MAP = {
     gowun: { name: '고운돋움', family: '"Gowun Dodum"', css: 'https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap' }
   };
   IWFormat.FONT_ORDER = ['pretendard', 'nanumsquare', 'noto', 'nanumgothic', 'gowun'];
+
+  // [4E] 글자 모양: 페이지 안 글자 종류마다 크기·굵기·글자색(·배경색)을 고름 (관리웹앱 각 카드의 '글자 모양')
+  // data.styles = { 종류: { size: '18px', weight: '700', color: '#hex', bg: '#hex' } }
+  // 고른 값만 덮어씀. 아무것도 안 고르면 styles 값이 없어 지금 모양 그대로 (기존 페이지 화면 차이 0)
+  // [key, 이름, 선택자, 기본 크기, 기본 굵기, 배경 가능, 모바일 비율]
+  var ROLE_REGION = '.iw-detail-region-details:not(.iw-detail-session-card-detail-rows) ';
+  var ROLE_SESROW = '.iw-detail-session-card-detail-rows ';
+  IWFormat.TEXT_ROLES = [
+    ['badge', '카테고리 배지', '.iw-detail-badge', 20, 800, true],
+    ['title', '제목', '.iw-detail-title', 28, 900, false, 22 / 28],
+    ['subtitleLabel', '한줄소개 라벨', '.iw-detail-subtitle-label', 16, 800],
+    ['subtitle', '한줄소개', '.iw-detail-subtitle', 16, 600, false, 15 / 16],
+    ['regionName', '지역 이름', '.iw-detail-region-name', 20, 900],
+    ['regionSubtitle', '지역 설명', '.iw-detail-region-subtitle', 15, 500],
+    ['detailLabel', '세부 항목 이름표', ROLE_REGION + '.iw-detail-region-detail-label', 15, 800, true],
+    ['detailContent', '세부 항목 내용', ROLE_REGION + '.iw-detail-region-detail-content', 15, 500],
+    ['calYear', '달력 연도', '.iw-detail-calendar-label', 14, 500],
+    ['calMonth', '달력 월', '.iw-detail-calendar-label .iw-detail-calendar-month', 22, 900],
+    ['calWeek', '달력 요일', '.iw-detail-calendar-grid th', 13, 800, true],
+    ['calDay', '달력 날짜', '.iw-detail-calendar-grid td', 14, 400],
+    ['calMark', '달력 강조 날짜', '.iw-detail-calendar-grid .iw-detail-day-circle', 14, 900, true],
+    ['infoLabel', '블록 제목', '.iw-detail-info-label', 18, 900],
+    ['infoValue', '모집인원 내용', '.iw-detail-info-value', 16, 500],
+    ['infoList', '주요내용·목록', '.iw-detail-info-list', 16, 500],
+    ['contactName', '문의처 이름', '.iw-detail-info-contact-name', 17, 800],
+    ['contactPhone', '문의처 전화', '.iw-detail-info-contact-phone', 17, 700],
+    ['contactAddress', '문의처 주소', '.iw-detail-info-contact-address', 14, 400],
+    ['button', '버튼', '.iw-detail-info-button', 30, 700, true],
+    ['richtext', '본문', '.iw-detail-info-richtext', 16, 500],
+    ['subheading', '소제목', '.iw-detail-info-subheading', 20, 800],
+    ['callout', '강조 상자', '.iw-detail-info-callout', 16, 500, true],
+    ['tableHead', '표 머리', '.iw-detail-info-table th', 14, 800, true],
+    ['tableCell', '표 칸', '.iw-detail-info-table td', 14, 400, true],
+    ['diagram', '도식 단계', '.iw-detail-info-diagram-step-content', 14, 600],
+    ['photoCaption', '사진 설명', '.iw-detail-info-photo-item figcaption', 13, 400],
+    ['sesGroup', '세션 구분 이름', '.iw-detail-sessions-group-badge', 13, 700, true],
+    ['sesCount', '세션 개수', '.iw-detail-sessions-group-count', 13, 400],
+    ['sesMonth', '세션 카드 월', '.iw-detail-session-card-date-month', 11, 400],
+    ['sesDay', '세션 카드 날짜', '.iw-detail-session-card-date-day', 21, 800],
+    ['sesTime', '세션 카드 시간', '.iw-detail-session-card-date-time', 11, 400],
+    ['sesTitle', '세션 제목', '.iw-detail-session-card-title', 14, 700],
+    ['sesDesc', '세션 소개', '.iw-detail-session-card-desc', 13, 400],
+    ['sesMeta', '세션 정원·강사', '.iw-detail-session-card-meta', 13, 400],
+    ['sesDetail', '세션 펼침 설명', '.iw-detail-session-card-detail', 13, 400],
+    ['sesChevron', '세션 펼침 표시(▾)', '.iw-detail-session-card-chevron', 12, 400],
+    ['sesRowLabel', '세션 세부 이름표', ROLE_SESROW + '.iw-detail-region-detail-label', 13, 600, true],
+    ['sesRowContent', '세션 세부 내용', ROLE_SESROW + '.iw-detail-region-detail-content', 13, 500],
+    ['sesCalMonth', '세션 달력 월', '.iw-detail-session-calendar-month', 13, 800],
+    ['sesCalWeek', '세션 달력 요일', '.iw-detail-session-calendar-grid th', 11, 600],
+    ['sesCalDay', '세션 달력 날짜', '.iw-detail-session-calendar-grid td', 12, 400],
+    ['sesCalMark', '세션 달력 강조 날짜', '.iw-detail-session-calendar-highlight-circle', 15, 900, true],
+    ['sesCalCaption', '세션 달력 설명', '.iw-detail-session-calendar-caption', 14, 800]
+  ].map(function (r) { return { key: r[0], name: r[1], sel: r[2], size: r[3], weight: r[4], bg: !!r[5], mobile: r[6] || 0 }; });
+
+  // 고른 글자 모양 → CSS 글 (이 카드에만: [data-iw-sid]). 잘못된 값은 버림
+  IWFormat.textStyleCss = function (sid, styles) {
+    if (!styles || typeof styles !== 'object') return '';
+    var hex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
+    var scope = '.iw-detail-card[data-iw-sid="' + sid + '"][data-iw-sid] ';
+    var out = [], mobile = [];
+    IWFormat.TEXT_ROLES.forEach(function (role) {
+      var s = styles[role.key];
+      if (!s || typeof s !== 'object') return;
+      var props = [];
+      var size = /^(\d{1,2})px$/.exec(String(s.size || ''));
+      var px = size ? Number(size[1]) : 0;
+      if (px >= 8 && px <= 60) props.push('font-size:' + px + 'px');
+      if (/^[1-9]00$/.test(String(s.weight || ''))) props.push('font-weight:' + s.weight);
+      if (hex.test(s.color || '')) props.push('color:' + (role.key === 'regionName' ? 'var(--region-name-color, ' + s.color + ')' : s.color));
+      if (role.bg && hex.test(s.bg || '')) props.push('background:' + s.bg);
+      if (!props.length) return;
+      var sel = role.sel.split(',').map(function (x) { return scope + x.trim(); }).join(',');
+      out.push(sel + '{' + props.join(';') + '}');
+      if (px >= 8 && px <= 60 && role.mobile) mobile.push(sel + '{font-size:' + Math.round(px * role.mobile) + 'px}');
+    });
+    if (mobile.length) out.push('@media (max-width: 640px){' + mobile.join('') + '}');
+    return out.join('\n');
+  };
   IWFormat.fontStack = function (key) {
     var f = IWFormat.FONTS[key];
     return f ? f.family + ', Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif' : '';
@@ -2029,17 +2107,20 @@ var TEXT_LINE_HEIGHT_MAP = {
   // 전체 조립 및 데이터 로딩
   // ------------------------------------------------------------
 
-  // [4E] 카테고리 배지 모양 (관리웹앱 기본 정보 → 카테고리 표시). 값이 없으면 지금 모양 그대로(20px · 800 · 카테고리 색)
-  var BADGE_SIZES = { small: '16px', large: '23px', xlarge: '26px' };
-  var BADGE_WEIGHTS = { regular: '500', bold: '700', black: '900' };
-  function applyBadgeStyle_(badge, style) {
-    ['font-size', 'font-weight', 'color', 'background'].forEach(function (k) { badge.style.removeProperty(k); });
-    if (!style || typeof style !== 'object') return;
-    var hex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
-    if (BADGE_SIZES[style.size]) badge.style.fontSize = BADGE_SIZES[style.size];
-    if (BADGE_WEIGHTS[style.weight]) badge.style.fontWeight = BADGE_WEIGHTS[style.weight];
-    if (hex.test(style.color || '')) badge.style.color = style.color;
-    if (hex.test(style.bg || '')) badge.style.background = style.bg;
+  // [4E] 글자 모양: 이 카드 전용 <style>을 head에 (다시 그리면 바꿔 끼움)
+  var styleSeq_ = 0;
+  function applyTextStyles_(root, styles) {
+    var sid = root.getAttribute('data-iw-sid');
+    var old = sid && document.getElementById('iw-text-style-' + sid);
+    if (old) old.parentNode.removeChild(old);
+    if (!sid) { styleSeq_ += 1; sid = 'c' + styleSeq_; }
+    var css = IWFormat.textStyleCss(sid, styles);
+    if (!css) { root.removeAttribute('data-iw-sid'); return; } // 고른 게 없으면 표시도 안 붙임 (방문자 화면 그대로)
+    root.setAttribute('data-iw-sid', sid);
+    var tag = document.createElement('style');
+    tag.id = 'iw-text-style-' + sid;
+    tag.textContent = css;
+    (document.head || document.documentElement).appendChild(tag);
   }
 
   // [4E] 글꼴 파일은 한 번만 불러옴 (페이지 head에 link)
@@ -2097,6 +2178,7 @@ var TEXT_LINE_HEIGHT_MAP = {
     var themeVars = IWFormat.themeVars(data && data.theme);
     Object.keys(themeVars).forEach(function (name) { root.style.setProperty(name, themeVars[name]); });
     applyFonts_(root, data && data.font);
+    applyTextStyles_(root, data && data.styles);
     root.setAttribute('data-status', 'ready');
 
     var photo = root.querySelector('.iw-detail-photo');
@@ -2118,7 +2200,6 @@ var TEXT_LINE_HEIGHT_MAP = {
 
     var badge = root.querySelector('.iw-detail-badge');
     badge.textContent = program.category || '';
-    applyBadgeStyle_(badge, data && data.badge);
     tagBlock_(badge, 'category');
 
     var title = root.querySelector('.iw-detail-title');
