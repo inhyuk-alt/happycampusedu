@@ -2029,6 +2029,19 @@ var TEXT_LINE_HEIGHT_MAP = {
   // 전체 조립 및 데이터 로딩
   // ------------------------------------------------------------
 
+  // [4E] 카테고리 배지 모양 (관리웹앱 기본 정보 → 카테고리 표시). 값이 없으면 지금 모양 그대로(20px · 800 · 카테고리 색)
+  var BADGE_SIZES = { small: '16px', large: '23px', xlarge: '26px' };
+  var BADGE_WEIGHTS = { regular: '500', bold: '700', black: '900' };
+  function applyBadgeStyle_(badge, style) {
+    ['font-size', 'font-weight', 'color', 'background'].forEach(function (k) { badge.style.removeProperty(k); });
+    if (!style || typeof style !== 'object') return;
+    var hex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
+    if (BADGE_SIZES[style.size]) badge.style.fontSize = BADGE_SIZES[style.size];
+    if (BADGE_WEIGHTS[style.weight]) badge.style.fontWeight = BADGE_WEIGHTS[style.weight];
+    if (hex.test(style.color || '')) badge.style.color = style.color;
+    if (hex.test(style.bg || '')) badge.style.background = style.bg;
+  }
+
   // [4E] 글꼴 파일은 한 번만 불러옴 (페이지 head에 link)
   function loadFontCss_(key) {
     var f = IWFormat.FONTS[key];
@@ -2105,6 +2118,7 @@ var TEXT_LINE_HEIGHT_MAP = {
 
     var badge = root.querySelector('.iw-detail-badge');
     badge.textContent = program.category || '';
+    applyBadgeStyle_(badge, data && data.badge);
     tagBlock_(badge, 'category');
 
     var title = root.querySelector('.iw-detail-title');
